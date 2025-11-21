@@ -5,7 +5,7 @@
 ---
 ## Team Project - RISC-V RV32I Processor
 
-**_Peter Cheung, V2.2 - 20 Nov 2025_**
+**_Peter Cheung, V2.3 - 21 Nov 2025_**
 
 ---
 
@@ -109,7 +109,7 @@ ___
 ___
 
 All deliverables must be via your Team's project coursework repo via the GitHub link you have provided for your team. The name of the repo has your team
-number at the end, and is private to your team, but accessible by myself.  All deliverables **must be** in the repo by *__23.59 Friday 13 December 2024__*
+number at the end, and is private to your team, but accessible by myself.  All deliverables **must be** in the repo by *__23.59 Friday 12 December 2025__*
 when all coursework team repos must be frozen.
 
 Deliverables must include the following:
