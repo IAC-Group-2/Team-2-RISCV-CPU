@@ -1,27 +1,52 @@
 module sign_extend #(
     parameter DATA_WIDTH = 32
 )(
-    input  logic [1:0]            imm_src,
-    input  logic [DATA_WIDTH-1:0] imm_instr,
-    output logic [DATA_WIDTH-1:0] imm_ext
+    input  logic [2:0]            imm_src_i,
+    input  logic [DATA_WIDTH-1:0] imm_instr_o,
+    output logic [DATA_WIDTH-1:0] imm_ext_o
 );
 
 always_comb begin
-    case (imm_src)
-        // I type: imm[31:20]
-        2'b0: imm_ext = {{20{imm_instr[31]}}, imm_instr[31:20]};
+    case (imm_src_i)
 
-        // B type: immediate values are scattered in the instruction
-        2'b1: imm_ext = {
-                        {19{imm_instr[31]}},     // sign extend
-                        imm_instr[31],           // imm[12]
-                        imm_instr[7],            // imm[11]
-                        imm_instr[30:25],        // imm[10:5]
-                        imm_instr[11:8],         // imm[4:1]
-                        1'b0                     // imm[0] = 0 is implicit
-                        };
-        
-        // S type
+        // I-type
+        3'b000: imm_ext_o = {
+            {20{imm_instr_o[31]}},
+            imm_instr_o[31:20]
+        };
+
+        // B-type
+        3'b001: imm_ext_o = {
+            {19{imm_instr_o[31]}}, 
+            imm_instr_0[31],
+            imm_instr_o[7],         
+            imm_instr_o[30:25],     
+            imm_instr_o[11:8],        
+            1'b0                      
+        };
+
+        // S-type
+        3'b010: imm_ext_o = {
+            {20{imm_instr_o[31]}},
+            imm_instr_o[31:25],
+            imm_instr_o[11:7],
+        };
+
+        // U-type
+        3'b011: imm_ext_o = {
+            {12{imm_instr_o[31]}},
+            imm_instr_o[31:12]
+        };
+
+        // J-type
+        3'b100: imm_ext_o = {
+            {11{imm_instr_o[31]}},
+            imm_instr_o[31],
+            imm_instr_o[19:12],
+            imm_instr_o[20],
+            imm_instr_o[30:21],
+            1'b0         
+        };
 
     endcase
 end
