@@ -14,22 +14,31 @@ module top #(
     logic [PC_WIDTH-1:0]            pcNext;
     
     //shift register
-    logic [PC_WIDTH-1:0]            pc;
+    logic [PC_WIDTH-1:0]            pcF; //Fetch
+    logic [PC_WIDTH-1:0]            pcD; //Decode
     
     //Instruction Memory Outputs
-    logic[INSTRUCTION_WIDTH-1:0]    Instr;
+    logic[INSTRUCTION_WIDTH-1:0]    InstrF; //Fetch
+    ogic[INSTRUCTION_WIDTH-1:0]     InstrD; //Decode
 
     //PC adder
-    logic [PC_WIDTH-1:0]            pcPlus4;
+    logic [PC_WIDTH-1:0]            pcPlus4F; //Fetch
+    logic [PC_WIDTH-1:0]            pcPlus4D; //Decode
+
+    logic [PC_WIDTH-1:0]            pcPlus4M; //Memory
+    logic [PC_WIDTH-1:0]            pcPlus4W; //Writeback
+
 
     //Control block outputs
     logic                           PCSrc;
-    logic                           ResultSrc;
+    logic                           ResultSrcW;
+    logic                           ResultSrcM;
     logic                           MemWrite;
     logic [2:0]                     ALUControl;
     logic                           ALUSrc;
     logic [1:0]                     ImmSrc;
-    logic                           RegWrite;
+    logic                           RegWriteM;
+    logic                           RegWriteW;
 
     //Register File Outputs
     logic[DATA_WIDTH-1:0]           SrcA;
@@ -42,14 +51,17 @@ module top #(
     logic[DATA_WIDTH-1:0]           SrcB;
    
     //ALU Output
-    logic[DATA_WIDTH-1:0]           ALUResult;
+    logic[DATA_WIDTH-1:0]           ALUResultE; //Execute
+    logic[DATA_WIDTH-1:0]           ALUResultM; //Memory
+    logic[DATA_WIDTH-1:0]           ALUResultW; //Writeback
     logic                           Zero;
 
     //Adder
     logic [PC_WIDTH-1:0]            pcTarget;
     
     //Data Memory
-    logic[DATA_WIDTH-1:0]           ReadData;
+    logic[DATA_WIDTH-1:0]           ReadDataM; //Memory
+    logic[DATA_WIDTH-1:0]           ReadDataW; //Writeback
 
     //Mux 2
     logic[DATA_WIDTH-1:0]           Result;
@@ -65,32 +77,46 @@ module top #(
         .clk_i(clk),
         .rst_i(rst),
         .pcNext_i(pcNext),
+        .en_i() //from Hazard Unit
         .pc_o(pc)
     );
 
     instr_mem instr_mem (
         .A_i(pc),
-        .RD_o(Instr)
+        .RD_o(InstrF)
     );
 
     addr addr(
-        .PC_i(pc),
+        .PC_i(pcF),
         .ImmOp_i(ImmExt),
         .pcTarget_o(pcTarget),
-        .pcPlus4_o(pcPlus4)
+        .pcPlus4_o(pcPlus4F)
     );
 
-    assign op = Instr[6:0];
-    assign funct3 = Instr[14:12];
-    assign funct7 = Instr[30];
+    pip_reg_d pip_reg_d (
+    .clk_i(clk),
+    .en_i(),
+    .pcF_i(pcF),
+    .InstrF_i(InstrF),
+    .pcPlus4F_i(pcPlus4F),
+    .pcD_o(pcD),
+    .InstrD_o(InstrD),
+    .pcPlus4D_o(pcPlus4D)
+);
+
+    assign op = InstrD[6:0];
+    assign funct3 = InstrD[14:12];
+    assign funct7 = InstrD[30];
 
     logic [4:0] rs1;
     logic [4:0] rs2;
     logic [4:0] rs3;
+    logic [4:0] rs3W;
+    logic [4:0] rs3M;
     
-    assign rs1 = Instr[19:15];
-    assign rs2 = Instr[24:20];
-    assign rs3 = Instr[11:7];
+    assign rs1 = InstrD[19:15];
+    assign rs2 = InstrD[24:20];
+    assign rs3D = InstrD[11:7];
 
     control_unit control_unit(
         .op_i(op),
@@ -107,7 +133,7 @@ module top #(
     //variable changing is needed
     sign_extend sign_extend (
         .imm_src_i(ImmSrc),
-        .imm_instr_i(Instr), //input
+        .imm_instr_i(InstrD), //input
         .imm_ext_o(ImmExt)
     );
     
@@ -117,7 +143,7 @@ module top #(
         .clk_i(clk),
         .A1_i(rs1),
         .A2_i(rs2),
-        .A3_i(rs3),
+        .A3_i(rs3W),
         .WD3_i(Result),
         .WE3_i(RegWrite),
         .RD1_o(SrcA),
@@ -138,12 +164,28 @@ module top #(
     data_memory data_memory(
         .clk_i(clk),
         .wr_en_i(MemWrite),
-        .addr_i(ALUResult),
+        .addr_i(ALUResultM),
         .data_i(WriteData),
-        .data_o(ReadData)
+        .data_o(ReadDataM)
+    );
+
+    pip_reg_d pip_reg_d(
+        .clk_i(clk),
+        .RegWriteM_i(RegWriteM),
+        .RegWriteW_o(RegWriteW),
+        .ResultSrcM_i(ResultSrcM),
+        .ResultSrcW_o(ResultSrcW),
+        .ALUResultM_i(ALUResultM),
+        .ALUResultW_o(ALUResultW),
+        .ReadDataM_i(ReadDataM),
+        .ReadDataW_o(ReadDataW),
+        .RdM_i(rs3M),
+        .RdW_o(rs3W),
+        .pcPlus4M_i(pcPlus4M),
+        .pcPlus4W_o(pcPlus4W)
     );
 
     //mux 3
-    assign Result = ResultSrc ? ReadData : ALUResult;
+    assign Result = ResultSrcW ? ReadDataW : ALUResultW;
 
 endmodule
