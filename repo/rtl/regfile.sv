@@ -10,6 +10,7 @@ module regfile #(
     input   logic                       WE3_i,
     output  logic [DATA_WIDTH-1:0]      RD1_o,
     output  logic [DATA_WIDTH-1:0]      RD2_o,
+    output  logic [DATA_WIDTH-1:0]      A0_o
 );
     //create ram with the defined logic
     logic [DATA_WIDTH-1:0] mem [2**ADDRESS_WIDTH-1:0];
@@ -23,4 +24,5 @@ module regfile #(
     //read commands
     assign RD1_o = mem[A1_i];
     assign RD2_o = mem[A2_i];
+    assign A0_o = mem[10];
 endmodule
