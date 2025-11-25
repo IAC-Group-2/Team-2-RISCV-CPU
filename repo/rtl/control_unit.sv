@@ -4,9 +4,11 @@ module control_unit(
     input   logic   [2:0]   funct3_i,
     input   logic           funct7_i,
     output  logic           RegWrite_o,
+    output  logic           MemWrite_o,
     output  logic   [2:0]   ALUControl_o,
     output  logic           ALUSrc_o,
     output  logic   [2:0]   ImmSrc_o,
+    output  logic           ResultSrc,
     output  logic           PCSrc_o
 );
 
