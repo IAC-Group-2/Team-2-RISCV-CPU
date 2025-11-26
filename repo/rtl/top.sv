@@ -133,10 +133,23 @@ module top #(
     logic [4:0] rs3;
     logic [4:0] rs3W;
     logic [4:0] rs3M;
-    
-    assign rs1 = InstrD[19:15];
-    assign rs2 = InstrD[24:20];
-    assign rs3D = InstrD[11:7];
+
+    logic [4:0] Rs1D;
+    logic [4:0] Rs1E;
+    logic [4:0] Rs2D;
+    logic [4:0] Rs2E;
+    logic [4:0] RdD;
+    logic [4:0] RdE;
+    logic [4:0] RdM;
+    logic [4:0] RdW;
+
+
+
+    assign Rs1D = InstrD[19:15];
+    assign Rs2D = InstrD[24:20];
+    assign RdD = InstrD[11:7];
+
+    assign Rs1D = InstrD[1:15];
 
     control_unit control_unit(
         .op_i(op),
@@ -160,9 +173,9 @@ module top #(
 
     regfile regfile(
         .clk_i(clk),
-        .A1_i(rs1),
-        .A2_i(rs2),
-        .A3_i(rs3W),
+        .A1_i(Rs1D),
+        .A2_i(Rs2D),
+        .A3_i(RdW),
         .WD3_i(Result),
         .WE3_i(RegWrite),
         .RD1_o(RD1D),
@@ -191,10 +204,10 @@ module top #(
         .RD2D_i(RD2D),
         .RD2E_o(RD2E),
         .PCD_i(PCD),
-        .PCE_o(),
-        .RdD_i(),
-        .RdE_o(),
-        .ImmExtD_i(),
+        .PCE_o(PCE),
+        .RdD_i(RdD),
+        .RdE_o(RdE),
+        .ImmExtD_i(ImmExtD),
         .ImmExtE_o(),
         .PCPlus4D_i(),
         .PCPlus4E_o(),
@@ -234,8 +247,8 @@ module top #(
         .ALUResultW_o(ALUResultW),
         .ReadDataM_i(ReadDataM),
         .ReadDataW_o(ReadDataW),
-        .RdM_i(rs3M),
-        .RdW_o(rs3W),
+        .RdM_i(RdM),
+        .RdW_o(RdW),
         .pcPlus4M_i(PCPlus4M),
         .pcPlus4W_o(PCPlus4W)
     );
