@@ -16,14 +16,14 @@ module pip_reg_d #(
 
 always_ff @(posedge clk_i) begin
     if (en_i) begin
-        pcD_o <= pcF_i;
-        InstrD_o <= InstrF_i;
-        pcPlus4D_o <= pcPlus4F_i;
+        pcD_o       <= pcF_i;
+        InstrD_o    <= InstrF_i;
+        pcPlus4D_o  <= pcPlus4F_i;
     end
     else begin//freeze
-        pcD_o <= pcD_o;
-        InstrD_o <= InstrD_o;
-        pcPlus4D_o <= pcPlus4D_o;
+        pcD_o       <= pcD_o;
+        InstrD_o    <= InstrD_o;
+        pcPlus4D_o  <= pcPlus4D_o;
     end
 end
 endmodule

@@ -10,10 +10,10 @@ module pc_reg #(
 
 always_ff @(posedge clk_i, posedge rst_i) 
     if (rst_i) 
-        pc_o <= 0;
+        pc_o    <= 0;
     else if (en_i)
-        pc_o <= pcNext_i;
-    else
-        pc_o <= pc_o; //freeze
+        pc_o    <= pcNext_i;
+    else //freeze
+        pc_o    <= pc_o; 
 
 endmodule
