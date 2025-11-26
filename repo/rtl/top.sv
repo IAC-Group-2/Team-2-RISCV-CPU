@@ -89,11 +89,11 @@ module top #(
     logic[DATA_WIDTH-1:0]           ResultW;
 
     //Hazard Unit
-    logic[2:0]                      FowardAE;
-    logic[2:0]                      FowardBE;
+    logic[2:0]                      ForwardAE;
+    logic[2:0]                      ForwardBE;
 
     assign ForwardAE = 'b0;
-    assign ForwardBe = 'b0;
+    assign ForwardBE = 'b0;
 
     //Control block inputs 
     logic [6:0]                     op;
@@ -233,7 +233,7 @@ module top #(
     );
 
     //3way mux so assumes ForwardAE != 11
-    assign SrcAE = FowardAE[1] ? (FowardAE[0] ? 'b0 : ALUResultM) : (ForwardAE[0] ? ResultW : RD1E); 
+    assign SrcAE = ForwardAE[1] ? (ForwardAE[0] ? 'b0 : ALUResultM) : (ForwardAE[0] ? ResultW : RD1E); 
     //3way mux so assumes ForwardBE != 11
     assign WriteDataE = ForwardBE[1] ? (ForwardBE[0] ? 'b0 : ALUResultM) : (ForwardBE[0] ? ResultW : RD2E);
     assign SrcBE = ALUSrcE ? ImmExtE : WriteDataE; 
