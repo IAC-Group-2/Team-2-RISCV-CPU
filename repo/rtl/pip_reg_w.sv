@@ -20,8 +20,8 @@ module pip_reg_w #(
     input   logic [REGISTER_ADDRESS_WIDTH-1:0]  RdM_i,
     output  logic [REGISTER_ADDRESS_WIDTH-1:0]  RdW_o,
 
-    input   logic [PC_WIDTH-1:0]            pcPlus4M_i,
-    output  logic [PC_WIDTH-1:0]            pcPlus4W_o
+    input   logic [PC_WIDTH-1:0]            PCPlus4M_i,
+    output  logic [PC_WIDTH-1:0]            PCPlus4W_o
 );
 
 always_ff @(posedge clk_i) begin
@@ -30,6 +30,6 @@ always_ff @(posedge clk_i) begin
     ALUResultW_o    <= ALUResultM_i;
     ReadDataW_o     <= ReadDataM_i;
     RdW_o           <= RdM_i;
-    pcPlus4W_o      <= pcPlus4M_i;
+    PCPlus4W_o      <= PCPlus4M_i;
 end
 endmodule
