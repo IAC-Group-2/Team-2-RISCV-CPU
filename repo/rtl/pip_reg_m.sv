@@ -1,6 +1,6 @@
 module pip_reg_m #( //Execute to memory stage
     PC_WIDTH = 32,
-    INSTRUCTION_WIDTH = 32
+    INSTRUCTION_WIDTH = 32,
     REGISTER_ADDRESS_WIDTH = 5
 )( 
     input   logic                           clk_i,
@@ -31,22 +31,22 @@ module pip_reg_m #( //Execute to memory stage
 
 always_ff @(posedge clk_i) begin
     if (en_i) begin
-        RegWriteE_i     <= RegWriteM_o;
-        ResultSrcE_i    <= ResultSrcM_o;
-        MemWriteE_i     <= MemWriteM_o;
-        ALUResultE_i    <= ALUResultM_o;
-        WriteDataE_i    <= WriteDataM_o;
-        RdE_i           <= RdM_o;
-        PCPlus4E_i      <= PCPlus4M_o; 
+        RegWriteM_o     <= RegWriteE_i;     
+        ResultSrcM_o    <= ResultSrcE_i;    
+        MemWriteM_o     <= MemWriteE_i;     
+        ALUResultM_o    <= ALUResultE_i;    
+        WriteDataM_o    <= WriteDataE_i;    
+        RdM_o           <= RdE_i;
+        PCPlus4M_o      <= PCPlus4E_i;       
     end
     else begin//freeze
-        RegWriteE_i     <= RegWriteE_i;
-        ResultSrcE_i    <= ResultSrcE_i;
-        MemWriteE_i     <= MemWriteE_i;
-        ALUResultE_i    <= ALUResultE_i;
-        WriteDataE_i    <= WriteDataE_i;
-        RdE_i           <= RdE_i;
-        PCPlus4E_i      <= PCPlus4E_i; 
+        RegWriteM_o     <= RegWriteM_o;
+        ResultSrcM_o    <= ResultSrcM_o;
+        MemWriteM_o     <= MemWriteM_o;
+        ALUResultM_o    <= ALUResultM_o;
+        WriteDataM_o    <= WriteDataM_o;
+        RdM_o           <= RdM_o;
+        PCPlus4M_o      <= PCPlus4M_o; 
       
     end
 end

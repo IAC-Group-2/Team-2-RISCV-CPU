@@ -1,6 +1,6 @@
 module pip_reg_e #( //Decode to execute stage
     PC_WIDTH = 32,
-    INSTRUCTION_WIDTH = 32
+    INSTRUCTION_WIDTH = 32,
     REGISTER_ADDRESS_WIDTH = 5
 )(
     input   logic                           clk_i,
@@ -49,34 +49,34 @@ module pip_reg_e #( //Decode to execute stage
 
 always_ff @(posedge clk_i) begin
     if (en_i) begin
-        RegWriteD_i     <= RegWriteE_o;
-        ResultSrcD_i    <= ResultSrcE_o;
-        MemWriteD_i     <= MemWriteE_o;
-        JumpD_i         <= JumpE_o;
-        BranchD_i       <= BranchE_o;
-        ALUControlD_i   <= ALUControlE_o;
-        ALUSrcD_i       <= ALUSrcE_o;
-        RD1D_i          <= RD1E_o;
-        RD2D_i          <= RD2E_o;
-        PCD_i           <= PCE_o;
-        RdD_i           <= RdE_o;
-        ImmExtD_i       <= ImmExtE_o;
-        PCPlus4D_i      <= PCPlus4E_o;
+        RegWriteE_o     <= RegWriteD_i;
+        ResultSrcE_o    <= ResultSrcD_i;
+        MemWriteE_o     <= MemWriteD_i;
+        JumpE_o         <= JumpD_i;
+        BranchE_o       <= BranchD_i;
+        ALUControlE_o   <= ALUControlD_i;
+        ALUSrcE_o       <= ALUSrcD_i;
+        RD1E_o          <= RD1D_i;
+        RD2E_o          <= RD2D_i;
+        PCE_o           <= PCD_i;
+        RdE_o           <= RdD_i;
+        ImmExtE_o       <= ImmExtD_i;
+        PCPlus4E_o      <= PCPlus4D_i;
     end
     else begin//freeze
-        RegWriteD_i     <= RegWriteD_i;
-        ResultSrcD_i    <= ResultSrcD_i;
-        MemWriteD_i     <= MemWriteD_i;
-        JumpD_i         <= JumpD_i;
-        BranchD_i       <= BranchD_i;
-        ALUControlD_i   <= ALUControlD_i;
-        ALUSrcD_i       <= ALUSrcD_i;
-        RD1D_i          <= RD1D_i;
-        RD2D_i          <= RD2D_i;
-        PCD_i           <= PCD_i;
-        RdD_i           <= RdD_i;
-        ImmExtD_i       <= ImmExtD_i;
-        PCPlus4D_i      <= PCPlus4D_i;
+        RegWriteE_o     <= RegWriteE_o;
+        ResultSrcE_o    <= ResultSrcE_o;
+        MemWriteE_o     <= MemWriteE_o;
+        JumpE_o         <= JumpE_o;
+        BranchE_o       <= BranchE_o;
+        ALUControlE_o   <= ALUControlE_o;
+        ALUSrcE_o       <= ALUSrcE_o;
+        RD1E_o          <= RD1E_o;
+        RD2E_o          <= RD2E_o;
+        PCE_o           <= PCE_o;
+        RdE_o           <= RdE_o;
+        ImmExtE_o       <= ImmExtE_o;
+        PCPlus4E_o      <= PCPlus4E_o;
     end
 end
 endmodule
