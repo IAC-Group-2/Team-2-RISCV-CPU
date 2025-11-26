@@ -16,10 +16,10 @@ module pip_reg_e #( //Decode to execute stage
     output  logic                           MemWriteE_o //Execute
 
     input   logic                           JumpD_i, //Decode
-    output  logic                           JumpE_i //Execute
+    output  logic                           JumpE_o //Execute
 
     input   logic                           BranchD_i, //Decode
-    output  logic                           BranchE_i //Execute
+    output  logic                           BranchE_o //Execute
 
     input   logic [2:0]                     ALUControlD_i, //Decode
     output  logic [2:0]                     ALUControlE_o //Execute
@@ -49,14 +49,34 @@ module pip_reg_e #( //Decode to execute stage
 
 always_ff @(posedge clk_i) begin
     if (en_i) begin
-        pcD_o <= pcF_i;
-        InstrD_o <= InstrF_i;
-        pcPlus4D_o <= pcPlus4F_i;
+        RegWriteD_i     <= RegWriteE_o;
+        ResultSrcD_i    <= ResultSrcE_o;
+        MemWriteD_i     <= MemWriteE_o;
+        JumpD_i         <= JumpE_o;
+        BranchD_i       <= BranchE_o;
+        ALUControlD_i   <= ALUControlE_o;
+        ALUSrcD_i       <= ALUSrcE_o;
+        RD1D_i          <= RD1E_o;
+        RD2D_i          <= RD2E_o;
+        PCD_i           <= PCE_o;
+        RdD_i           <= RdE_o;
+        ImmExtD_i       <= ImmExtE_o;
+        PCPlus4D_i      <= PCPlus4E_o;
     end
     else begin//freeze
-        pcD_o <= pcD_o;
-        InstrD_o <= InstrD_o;
-        pcPlus4D_o <= pcPlus4D_o;
+        RegWriteD_i     <= RegWriteD_i;
+        ResultSrcD_i    <= ResultSrcD_i;
+        MemWriteD_i     <= MemWriteD_i;
+        JumpD_i         <= JumpD_i;
+        BranchD_i       <= BranchD_i;
+        ALUControlD_i   <= ALUControlD_i;
+        ALUSrcD_i       <= ALUSrcD_i;
+        RD1D_i          <= RD1D_i;
+        RD2D_i          <= RD2D_i;
+        PCD_i           <= PCD_i;
+        RdD_i           <= RdD_i;
+        ImmExtD_i       <= ImmExtD_i;
+        PCPlus4D_i      <= PCPlus4D_i;
     end
 end
 endmodule
