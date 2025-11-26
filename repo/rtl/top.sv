@@ -92,6 +92,9 @@ module top #(
     logic[2:0]                      FowardAE;
     logic[2:0]                      FowardBE;
 
+    assign ForwardAE = 'b0;
+    assign ForwardBe = 'b0;
+
     //Control block inputs 
     logic [6:0]                     op;
     logic [2:0]                     funct3;
