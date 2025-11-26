@@ -28,7 +28,7 @@ module top #(
     logic                           MemWrite;
     logic [2:0]                     ALUControl;
     logic                           ALUSrc;
-    logic [1:0]                     ImmSrc;
+    logic [2:0]                     ImmSrc;
     logic                           RegWrite;
 
     //Register File Outputs
@@ -106,9 +106,9 @@ module top #(
 
     //variable changing is needed
     sign_extend sign_extend (
-        .imm_src_i(ImmSrc),
-        .imm_instr_i(Instr), //input
-        .imm_ext_o(ImmExt)
+        .ImmSrc_i(ImmSrc),
+        .ImmInstr_i(Instr), //input
+        .ImmExt_o(ImmExt)
     );
     
     
