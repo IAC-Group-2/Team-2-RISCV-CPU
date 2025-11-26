@@ -30,15 +30,24 @@ module top #(
 
 
     //Control block outputs
-    logic                           PCSrc;
-    logic                           ResultSrcW;
-    logic                           ResultSrcM;
-    logic                           MemWrite;
-    logic [2:0]                     ALUControl;
-    logic                           ALUSrc;
-    logic [1:0]                     ImmSrc;
+    logic                           PCSrc; // ?
+    logic                           RegWriteD;
+    logic                           RegWriteE;
     logic                           RegWriteM;
     logic                           RegWriteW;
+    logic [1:0]                     ResultSrcD;
+    logic [1:0]                     ResultSrcE;
+    logic [1:0]                     ResultSrcM;
+    logic [1:0]                     ResultSrcW;
+    logic                           MemWriteD;
+    logic                           MemWriteE;
+    logic                           MemWriteM;
+    logic [2:0]                     ALUControlD;
+    logic [2:0]                     ALUControlE;
+    logic                           ALUSrcD;
+    logic                           ALUSrcE;
+    logic [1:0]                     ImmSrcD;
+
 
     //Register File Outputs
     logic[DATA_WIDTH-1:0]           SrcA;
@@ -127,10 +136,10 @@ module top #(
         .Zero_i(Zero),
         .funct3_i(funct3),
         .funct7_i(funct7),
-        .RegWrite_o(RegWrite),
-        .ALUControl_o(ALUControl),
-        .ALUSrc_o(ALUSrc),
-        .ImmSrc_o(ImmSrc),
+        .RegWrite_o(RegWriteD),
+        .ALUControl_o(ALUControlD),
+        .ALUSrc_o(ALUSrcD),
+        .ImmSrc_o(ImmSrcD),
         .PCSrc_o(PCSrc)
     );
 
@@ -155,6 +164,38 @@ module top #(
         .A0_o(a0)
     );
 
+     pip_reg_e pip_reg_e(
+        .clk_i(clk),
+        .RegWriteD_i(RegWrite),
+        .RegWriteE_o(),
+        .ResultSrcD_i(),
+        .ResultSrcE_o(),
+        .MemWriteD_i(),
+        .MemWriteE_o(),
+        .JumpD_i(),
+        .JumpE_o(),
+        .BranchD_i(),
+        .BranchE_o(),
+        .ALUControlD_i(),
+        .ALUControlE_o(),
+        .ALUSrcD_i(),
+        .ALUSrcE_o(),
+        .RD1D_i(),
+        .RD1E_o(),
+        .RD2D_i(),
+        .RD2E_o(),
+        .PCD_i(),
+        .PCE_o(),
+        .RdD_i(),
+        .RdE_o(),
+        .ImmExtD_i(),
+        .ImmExtE_o(),
+        .PCPlus4D_i(),
+        .PCPlus4E_o(),
+    )
+
+
+
     assign SrcB = ALUSrc ? ImmExt : WriteData;
 
     ALU ALU (
@@ -164,6 +205,10 @@ module top #(
         .ALUResult_o(ALUResult),
         .Zero_o(Zero)
         );    
+
+    pip_reg_m pip_reg_m(
+
+    )
 
     data_memory data_memory(
         .clk_i(clk),
