@@ -147,4 +147,15 @@ always_comb begin
     endcase
 end
 
+always_comb begin
+        if (branch) begin
+            if (funct3_i[0] == 1'b1) 
+                PCSrc_o = ~Zero_i; // BNE (Branch if Not Zero)
+            else                     
+                PCSrc_o = Zero_i;  // BEQ (Branch if Zero)
+        end else begin
+            PCSrc_o = 0;
+        end
+    end
+
 endmodule
