@@ -1,7 +1,7 @@
 module pip_reg_e #( //Decode to execute stage
     PC_WIDTH = 32,
     INSTRUCTION_WIDTH = 32
-    REGISTER_ADDR_SIZE = 5
+    REGISTER_ADDRESS_WIDTH = 5
 )(
     input   logic                           clk_i,
     input   logic                           en_i,
@@ -36,8 +36,8 @@ module pip_reg_e #( //Decode to execute stage
     input   logic [PC_WIDTH-1:0]            PCD_i, //Decode
     output  logic [PC_WIDTH-1:0]            PCE_o, //Execute
     
-    input   logic [REGISTER_ADDR_SIZE-1:0]  RdD_i, //Decode
-    output  logic [REGISTER_ADDR_SIZE-1:0]  RdE_o, //Execute
+    input   logic [REGISTER_ADDRESS_WIDTH-1:0]  RdD_i, //Decode
+    output  logic [REGISTER_ADDRESS_WIDTH-1:0]  RdE_o, //Execute
     
     input   logic [INSTRUCTION_WIDTH-1:0]   ImmExtD_i, //Decode
     output  logic [INSTRUCTION_WIDTH-1:0]   ImmExtE_o, //Execute
