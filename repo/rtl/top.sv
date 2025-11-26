@@ -54,7 +54,7 @@ module top #(
     logic[DATA_WIDTH-1:0]           WriteData;
 
     //Extend Output
-    logic[DATA_WIDTH-1:0]           ImmExt;
+    logic[DATA_WIDTH-1:0]           ImmExtD;
 
     //MUX 1
     logic[DATA_WIDTH-1:0]           SrcB;
@@ -145,9 +145,9 @@ module top #(
 
     //variable changing is needed
     sign_extend sign_extend (
-        .imm_src_i(ImmSrc),
+        .imm_src_i(ImmSrcD),
         .imm_instr_i(InstrD), //input
-        .imm_ext_o(ImmExt)
+        .imm_ext_o(ImmExtD)
     );
     
     
