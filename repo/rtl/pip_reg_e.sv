@@ -4,7 +4,7 @@ module pip_reg_e #( //Decode to execute stage
     REGISTER_ADDRESS_WIDTH = 5
 )(
     input   logic                           clk_i,
-    input   logic                           en_i,
+    input   logic                           clr_i,
 
     input   logic                           RegWriteD_i, //Decode
     output  logic                           RegWriteE_o, //Execute
@@ -13,7 +13,7 @@ module pip_reg_e #( //Decode to execute stage
     output  logic[1:0]                      ResultSrcE_o, //Execute
 
     input   logic                           MemWriteD_i, //Decode
-    output  logic                           MemWriteE_o //Execute
+    output  logic                           MemWriteE_o, //Execute
 
     input   logic                           JumpD_i, //Decode
     output  logic                           JumpE_o, //Execute
@@ -48,7 +48,7 @@ module pip_reg_e #( //Decode to execute stage
 );
 
 always_ff @(posedge clk_i) begin
-    if (en_i) begin
+    if (clr_i) begin
         RegWriteE_o     <= RegWriteD_i;
         ResultSrcE_o    <= ResultSrcD_i;
         MemWriteE_o     <= MemWriteD_i;
@@ -63,20 +63,20 @@ always_ff @(posedge clk_i) begin
         ImmExtE_o       <= ImmExtD_i;
         PCPlus4E_o      <= PCPlus4D_i;
     end
-    else begin//freeze
-        RegWriteE_o     <= RegWriteE_o;
-        ResultSrcE_o    <= ResultSrcE_o;
-        MemWriteE_o     <= MemWriteE_o;
-        JumpE_o         <= JumpE_o;
-        BranchE_o       <= BranchE_o;
-        ALUControlE_o   <= ALUControlE_o;
-        ALUSrcE_o       <= ALUSrcE_o;
-        RD1E_o          <= RD1E_o;
-        RD2E_o          <= RD2E_o;
-        PCE_o           <= PCE_o;
-        RdE_o           <= RdE_o;
-        ImmExtE_o       <= ImmExtE_o;
-        PCPlus4E_o      <= PCPlus4E_o;
+    else begin//flush logic ... tbc
+        RegWriteE_o     <= 'b0;
+        ResultSrcE_o    <= 'b0;
+        MemWriteE_o     <= 'b0;
+        JumpE_o         <= 'b0;
+        BranchE_o       <= 'b0;
+        ALUControlE_o   <= 'b0;
+        ALUSrcE_o       <= 'b0;
+        RD1E_o          <= 'b0;
+        RD2E_o          <= 'b0;
+        PCE_o           <= 'b0;
+        RdE_o           <= 'b0;
+        ImmExtE_o       <= 'b0;
+        PCPlus4E_o      <= 'b0;
     end
 end
 endmodule

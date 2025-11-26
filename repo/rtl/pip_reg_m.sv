@@ -4,7 +4,6 @@ module pip_reg_m #( //Execute to memory stage
     REGISTER_ADDRESS_WIDTH = 5
 )( 
     input   logic                           clk_i,
-    input   logic                           en_i,
 
     input   logic                           RegWriteE_i, //Execute
     output  logic                           RegWriteM_o, //Memory
@@ -30,24 +29,15 @@ module pip_reg_m #( //Execute to memory stage
 );
 
 always_ff @(posedge clk_i) begin
-    if (en_i) begin
-        RegWriteM_o     <= RegWriteE_i;     
-        ResultSrcM_o    <= ResultSrcE_i;    
-        MemWriteM_o     <= MemWriteE_i;     
-        ALUResultM_o    <= ALUResultE_i;    
-        WriteDataM_o    <= WriteDataE_i;    
-        RdM_o           <= RdE_i;
-        PCPlus4M_o      <= PCPlus4E_i;       
-    end
-    else begin//freeze
-        RegWriteM_o     <= RegWriteM_o;
-        ResultSrcM_o    <= ResultSrcM_o;
-        MemWriteM_o     <= MemWriteM_o;
-        ALUResultM_o    <= ALUResultM_o;
-        WriteDataM_o    <= WriteDataM_o;
-        RdM_o           <= RdM_o;
-        PCPlus4M_o      <= PCPlus4M_o; 
-      
-    end
+   
+    RegWriteM_o     <= RegWriteE_i;     
+    ResultSrcM_o    <= ResultSrcE_i;    
+    MemWriteM_o     <= MemWriteE_i;     
+    ALUResultM_o    <= ALUResultE_i;    
+    WriteDataM_o    <= WriteDataE_i;    
+    RdM_o           <= RdE_i;
+    PCPlus4M_o      <= PCPlus4E_i;       
+   
+    
 end
 endmodule
