@@ -3,12 +3,12 @@ module addr #(
 )(
     input logic [DATA_WIDTH-1:0]        PC_i,
     input logic [DATA_WIDTH-1:0]        ImmOp_i,
-    output logic [DATA_WIDTH-1:0]       pcTarget_o,
-    output logic [DATA_WIDTH-1:0]       pcPlus4_o
+    output logic [DATA_WIDTH-1:0]       PCTarget_o,
+    output logic [DATA_WIDTH-1:0]       PCPlus4_o
 );
     always_comb begin
-        pcTarget_o  = PC_i + ImmOp_i;
-        pcPlus4_o   = PC_i + 'd4;
+        PCTarget_o  = PC_i + ImmOp_i;
+        PCPlus4_o   = PC_i + 'd4;
     end
 
 endmodule

@@ -11,7 +11,7 @@ module top #(
 );
 
     //mux 0
-    logic [PC_WIDTH-1:0]            pcNext;
+    logic [PC_WIDTH-1:0]            PCNext;
     
     //shift register
     logic [PC_WIDTH-1:0]            PCF; //Fetch
@@ -73,7 +73,7 @@ module top #(
     logic                           Zero;
 
     //Adder
-    logic [PC_WIDTH-1:0]            pcTarget;
+    logic [PC_WIDTH-1:0]            PCTarget;
     
     //Data Memory
     logic[DATA_WIDTH-1:0]           ReadDataM; //Memory
@@ -91,37 +91,37 @@ module top #(
 
     assign en = 1;
 
-    assign pcNext = PCSrc ? pcTarget : pcPlus4;
+    assign PCNext = PCSrc ? PCTarget : PCPlus4;
  
-    pc_reg pc_reg (
+    PC_reg PC_reg (
         .clk_i(clk),
         .rst_i(rst),
-        .pcNext_i(pcNext),
+        .PCNext_i(PCNext),
         .en_i(en), //from Hazard Unit
-        .pc_o(pc)
+        .PC_o(PC)
     );
 
     instr_mem instr_mem (
-        .A_i(pc),
+        .A_i(PC),
         .RD_o(InstrF)
     );
 
     addr addr(
         .PC_i(PCF),
         .ImmOp_i(ImmExt),
-        .pcTarget_o(pcTarget),
-        .pcPlus4_o(PCPlus4F)
+        .PCTarget_o(PCTarget),
+        .PCPlus4_o(PCPlus4F)
     );
 
     pip_reg_d pip_reg_d (
     .clk_i(clk),
     .en_i(en),
-    .pcF_i(PCF),
+    .PCF_i(PCF),
     .InstrF_i(InstrF),
-    .pcPlus4F_i(PCPlus4F),
-    .pcD_o(PCD),
+    .PCPlus4F_i(PCPlus4F),
+    .PCD_o(PCD),
     .InstrD_o(InstrD),
-    .pcPlus4D_o(PCPlus4D)
+    .PCPlus4D_o(PCPlus4D)
 );
 
     assign op = InstrD[6:0];
@@ -198,7 +198,7 @@ module top #(
         .ImmExtE_o(),
         .PCPlus4D_i(),
         .PCPlus4E_o(),
-    )
+    );
 
 
 
@@ -214,7 +214,7 @@ module top #(
 
     pip_reg_m pip_reg_m(
 
-    )
+    );
 
     data_memory data_memory(
         .clk_i(clk),
@@ -236,8 +236,8 @@ module top #(
         .ReadDataW_o(ReadDataW),
         .RdM_i(rs3M),
         .RdW_o(rs3W),
-        .pcPlus4M_i(PCPlus4M),
-        .pcPlus4W_o(PCPlus4W)
+        .PCPlus4M_i(PCPlus4M),
+        .PCPlus4W_o(PCPlus4W)
     );
 
     //mux 3
