@@ -96,15 +96,11 @@ module top #(
     logic[1:0]                      ForwardAE;
     logic[1:0]                      ForwardBE;
 
-    assign ForwardAE = 'b0;
-    assign ForwardBE = 'b0;
-
     //Control block inputs 
     logic [6:0]                     op;
     logic [2:0]                     funct3;
     logic                           funct7;
 
-    assign en = 1;
     assign PCSrcE = JumpE || (BranchE && ZeroE);
     assign PCNext = PCSrcE ? PCTargetE : PCPlus4F;
     // NOTE: after control block changes PCSrcE, make PCSrcE = the or stuff in diag
@@ -123,7 +119,7 @@ module top #(
         .Rs1E_i(Rs1E),
         .Rs2E_i(Rs2E),
         .RdE_i(RdE),
-        .ResultSrcE_i(ResultSrcE),
+        .ResultSrcE0_i(ResultSrcE[0]),
         .RdM_i(RdM),
         .RegWriteM_i(RegWriteM),
         .RdW_i(RdW),
@@ -136,7 +132,6 @@ module top #(
         .FlushD_o(FlushD),
         .FlushE_o(FlushE)
     );
-
 
     instr_mem instr_mem (
         .A_i(PCF),
@@ -183,6 +178,8 @@ module top #(
     assign RdD = InstrD[11:7];
 
 
+    //Control unit needs to be modified to have JumpD, BranchD
+    //Control unit must not take input from zeroE, get rid of PCSrcE output pls
     control_unit control_unit(
         .op_i(op),
         .Zero_i(ZeroE),
@@ -212,15 +209,12 @@ module top #(
         .A2_i(Rs2D),
         .A3_i(RdW),
         .WD3_i(ResultW),
-        .WE3_i(RegWriteW), // THIS NEEDS TO CHANGE TO A MUX OUTPUT OF W STAGE
+        .WE3_i(RegWriteW),
         .RD1_o(RD1D),
         .RD2_o(RD2D),
         .A0_o(a0) 
     );
 
-    logic clr;
-    assign clr = 'b0;
-    assign BranchD = 'b0;  // No branching for now UPDATE WHEN CONTROL UNIT GETS THIS CAPABILITY
 
     pip_reg_e pip_reg_e(
         .clk_i(clk),
