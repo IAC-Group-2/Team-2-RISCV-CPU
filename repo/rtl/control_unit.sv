@@ -23,7 +23,7 @@ always_comb begin
     MemWrite_o = 0;
     ALUSrc_o = 0;
     ResultSrc_o = 0;
-    ImmSrc_o = 3'b000;
+    ImmSrc_o = 3'b000; // I-type immediate
     branch = 0;
     jump = 0;
     ALUOp = 2'b00;
@@ -32,95 +32,66 @@ always_comb begin
         // R-Type
         7'b0110011: begin
             RegWrite_o = 1;
-            ALUSrc_o = 0;
-            MemWrite_o = 0;
-            ResultSrc_o = 0;
-            branch = 0;
             ALUOp = 2'b10;
-            jump = 0;
         end
 
         // I-Type (Arithmetic)
         7'b0010011: begin
             RegWrite_o = 1;
             ALUSrc_o = 1;
-            ResultSrc_o = 0;
-            ImmSrc_o = 3'b000;
-            branch = 0;
             ALUOp = 2'b10;
-            jump = 0;
         end
 
         // I-Type (Load)
         7'b0000011: begin
             RegWrite_o = 1;
             ALUSrc_o = 1;
-            ResultSrc_o = 1; 
-            ImmSrc_o = 3'b000; 
-            branch = 0;
+            ResultSrc_o = 1;  
             ALUOp = 2'b00;
-            jump = 0;
         end
 
-         // B-Type
-        7'b1100011: begin 
-            RegWrite_o = 0;
-            MemWrite_o = 0;
-            ALUSrc_o = 0;
+        // B-Type
+        7'b1100011: begin
             ImmSrc_o = 3'b001; 
             branch = 1;
             ALUOp = 2'b01;
-            jump = 0;
         end
 
         // S-Type (Store)
         7'b0100011: begin
-            RegWrite_o = 0;
             MemWrite_o = 1;
             ALUSrc_o = 1;
             ImmSrc_o = 3'b010; 
-            ResultSrc_o = 0;
-            branch = 0;
             ALUOp = 2'b00;
-            jump = 0;
         end
 
         // J-Type (JAL)
         7'b1101111: begin
             RegWrite_o = 1;
-            MemWrite_o = 0;
-            ALUSrc_o = 0;
-            ResultSrc_o = 0;
             ImmSrc_o = 3'b100;
-            branch = 0;
-            ALUOp = 2'b00;
+            ALUOp = 2'b00; 
             jump = 1;
         end
 
         // I-Type (JALR)
         7'b1100111: begin
             RegWrite_o = 1;
-            MemWrite_o = 0;
             ALUSrc_o = 1;
-            ResultSrc_o = 0;
-            ImmSrc_o = 3'b000;
-            branch = 0;
-            ALUOp = 2'b00;
+            ImmSrc_o = 3'b000; 
+            ALUOp = 2'b00; 
             jump = 1;
         end
-        
-        default: begin
-            RegWrite_o = 0;
-            MemWrite_o = 0;
-            ALUSrc_o = 0;
-            ResultSrc_o = 0;
-            ImmSrc_o = 3'b000;
-            branch = 0;
+
+        // U-Type
+        7'b0110111, 7'b0010111: begin
+            RegWrite_o = 1;       
+            ALUSrc_o = 1;
+            ImmSrc_o = 3'b011;
             ALUOp = 2'b00;
-            jump = 0;
         end
+        
+        default: ; // already defined above
     endcase
-    PCSrc_o = (branch & Zero_i) | jump;
 end
 
 // ALU decoder
@@ -133,13 +104,12 @@ always_comb begin
         2'b10: begin
             case (funct3_i)
                 3'b000: begin
-                    if (op_i[5] & funct7_i) ALUControl_o = 3'b001; // sub
+                    if (funct7_i) ALUControl_o = 3'b001; // sub
                     else ALUControl_o = 3'b000; // add
                 end
                 3'b010:  ALUControl_o = 3'b101; // slt
                 3'b110:  ALUControl_o = 3'b011; // or
                 3'b111:  ALUControl_o = 3'b010; // and
-
                 default: ALUControl_o = 3'b000;
             endcase
         end
@@ -147,15 +117,21 @@ always_comb begin
     endcase
 end
 
+// PC Source Selector
 always_comb begin
-        if (branch) begin
-            if (funct3_i[0] == 1'b1) 
-                PCSrc_o = ~Zero_i; // BNE (Branch if Not Zero)
-            else                     
-                PCSrc_o = Zero_i;  // BEQ (Branch if Zero)
-        end else begin
-            PCSrc_o = 0;
-        end
+    if (jump) begin
+        // JAL or JALR: Always take the jump
+        PCSrc_o = 1'b1;
+    end else if (branch) begin
+        // B-Type: Conditional branch decision
+        if (funct3_i[0] == 1'b1) 
+            PCSrc_o = ~Zero_i; // BNE (branch is not zero)
+        else                     
+            PCSrc_o = Zero_i;  // BEQ (branch if zero)
+    end else begin
+        // R/I/S-Type
+        PCSrc_o = 1'b0;
     end
+end
 
 endmodule
