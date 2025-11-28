@@ -15,18 +15,14 @@ module control_unit(
 logic branch;
 logic [1:0] ALUOp;
 
+// Test comment
 // Main Decoder
 always_comb begin
     RegWrite_o = 0;
     MemWrite_o = 0;
     ALUSrc_o = 0;
-<<<<<<< HEAD
-    ResultSrc_o = 2'b00;
-    ImmSrc_o = 3'b000;
-=======
     ResultSrc_o = 0;
     ImmSrc_o = 3'b000; // I-type immediate
->>>>>>> d66f952e939157a6850dcd2adfbc1be02cb4cd4c
     branch = 0;
     ALUOp = 2'b00;
 
@@ -34,13 +30,6 @@ always_comb begin
         // R-Type
         7'b0110011: begin
             RegWrite_o = 1;
-<<<<<<< HEAD
-            ALUSrc_o = 0;
-            MemWrite_o = 0;
-            ResultSrc_o = 2'b00;  // ALU result
-            branch = 0;
-=======
->>>>>>> d66f952e939157a6850dcd2adfbc1be02cb4cd4c
             ALUOp = 2'b10;
         end
 
@@ -48,12 +37,6 @@ always_comb begin
         7'b0010011: begin
             RegWrite_o = 1;
             ALUSrc_o = 1;
-<<<<<<< HEAD
-            ResultSrc_o = 2'b00;  // ALU result
-            ImmSrc_o = 3'b000;
-            branch = 0;
-=======
->>>>>>> d66f952e939157a6850dcd2adfbc1be02cb4cd4c
             ALUOp = 2'b10;
         end
 
@@ -61,34 +44,6 @@ always_comb begin
         7'b0000011: begin
             RegWrite_o = 1;
             ALUSrc_o = 1;
-<<<<<<< HEAD
-            ResultSrc_o = 2'b01;  // Memory data
-            ImmSrc_o = 3'b000; 
-            branch = 0;
-            ALUOp = 2'b00;
-        end
-         // B-Type
-        7'b1100011: begin 
-            RegWrite_o = 0;
-            MemWrite_o = 0;
-            ALUSrc_o = 0;
-            ImmSrc_o = 3'b001; 
-            branch = 1;
-            ALUOp = 2'b01;
-        end
-        
-        default: begin
-            RegWrite_o = 0;
-            MemWrite_o = 0;
-            ALUSrc_o = 0;
-            ResultSrc_o = 2'b00;
-            ImmSrc_o = 3'b000;
-            branch = 0;
-            ALUOp = 2'b00;
-        end
-    endcase
-    PCSrc_o = branch & ~Zero_i;
-=======
             ResultSrc_o = 1;  
             ALUOp = 2'b00;
         end
@@ -118,7 +73,6 @@ always_comb begin
         
         default: ; // already defined above
     endcase
->>>>>>> d66f952e939157a6850dcd2adfbc1be02cb4cd4c
 end
 
 // ALU decoder
@@ -130,18 +84,6 @@ always_comb begin
     endcase
 end
 
-<<<<<<< HEAD
-always_comb begin
-        if (branch) begin
-            if (funct3_i[0] == 1'b1) 
-                PCSrc_o = ~Zero_i; // BNE (Branch if Not Zero)
-            else                     
-                PCSrc_o = Zero_i;  // BEQ (Branch if Zero)
-        end else begin
-            PCSrc_o = 0;
-        end
-    end
-=======
 // PC Source Selector
 always_comb begin
     if (jump) begin
@@ -158,6 +100,5 @@ always_comb begin
         PCSrc_o = 1'b0;
     end
 end
->>>>>>> d66f952e939157a6850dcd2adfbc1be02cb4cd4c
 
 endmodule
