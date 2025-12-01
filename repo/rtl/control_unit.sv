@@ -9,96 +9,120 @@ module control_unit(
     output  logic           ALUSrc_o,
     output  logic   [2:0]   ImmSrc_o,
     output  logic   [1:0]   ResultSrc_o,
-    output  logic           PCSrc_o
+    output  logic   [1:0]   PCSrc_o
 );
 
-logic branch;
-logic [1:0] ALUOp;
+    logic       branch;
+    logic [1:0] ALUOp;
+    logic       jump;
+    logic       jalr;
 
-// Test comment
-// Main Decoder
-always_comb begin
-    RegWrite_o = 0;
-    MemWrite_o = 0;
-    ALUSrc_o = 0;
-    ResultSrc_o = 0;
-    ImmSrc_o = 3'b000; // I-type immediate
-    branch = 0;
-    ALUOp = 2'b00;
+    // Main Decoder
+    always_comb begin
+        RegWrite_o  = 0;
+        MemWrite_o  = 0;
+        ALUSrc_o    = 0;
+        ResultSrc_o = 0;
+        ImmSrc_o    = 3'b000;
+        branch      = 0;
+        jump        = 0;
+        jalr        = 0;
+        ALUOp       = 2'b00;
 
-    case (op_i) 
-        // R-Type
-        7'b0110011: begin
-            RegWrite_o = 1;
-            ALUOp = 2'b10;
-        end
-
-        // I-Type (Arithmetic)
-        7'b0010011: begin
-            RegWrite_o = 1;
-            ALUSrc_o = 1;
-            ALUOp = 2'b10;
-        end
-
-        // I-Type (Load)
-        7'b0000011: begin
-            RegWrite_o = 1;
-            ALUSrc_o = 1;
-            ResultSrc_o = 1;  
-            ALUOp = 2'b00;
-        end
-
-        // B-Type
-        7'b1100011: begin
-            ImmSrc_o = 3'b001; 
-            branch = 1;
-            ALUOp = 2'b01;
-        end
-
-        // S-Type (Store)
-        7'b0100011: begin
-            MemWrite_o = 1;
-            ALUSrc_o = 1;
-            ImmSrc_o = 3'b010; 
-            ALUOp = 2'b00;
-        end
-
-        // J-Type (JAL)
-        7'b1101111: begin
-            RegWrite_o = 1;
-            ImmSrc_o = 3'b100;
-            ALUOp = 2'b00; 
-            jump = 1;
-        end
-        
-        default: ; // already defined above
-    endcase
-end
-
-// ALU decoder
-always_comb begin
-    case(ALUOp)
-        2'b00: ALUControl_o = 3'b000;
-        2'b01: ALUControl_o = 3'b001;
-        default: ALUControl_o = 3'b000;
-    endcase
-end
-
-// PC Source Selector
-always_comb begin
-    if (jump) begin
-        // JAL or JALR: Always take the jump
-        PCSrc_o = 1'b1;
-    end else if (branch) begin
-        // B-Type: Conditional branch decision
-        if (ALUControl_o == 3'b001 && ALUOp == 2'b01) 
-            PCSrc_o = ~Zero_i; // BNE (branch is not zero)
-        else                     
-            PCSrc_o = Zero_i; // BEQ (branch if zero)
-    end else begin
-        // R/I/S-Type
-        PCSrc_o = 1'b0;
+        case (op_i) 
+            // R-Type
+            7'b0110011: begin
+                RegWrite_o = 1;
+                ALUOp      = 2'b10;
+            end
+            // I-Type (Arithmetic)
+            7'b0010011: begin
+                RegWrite_o = 1;
+                ALUSrc_o   = 1;
+                ALUOp      = 2'b10;
+            end
+            // I-Type (Load)
+            7'b0000011: begin
+                RegWrite_o  = 1;
+                ALUSrc_o    = 1;
+                ResultSrc_o = 1;  
+                ALUOp       = 2'b00;
+            end
+            // S-Type
+            7'b0100011: begin
+                MemWrite_o = 1;
+                ALUSrc_o   = 1;
+                ImmSrc_o   = 3'b010; 
+                ALUOp      = 2'b00;
+            end
+            // B-Type
+            7'b1100011: begin
+                ImmSrc_o = 3'b001;
+                branch   = 1;
+                ALUOp    = 2'b01;
+            end
+            // JAL
+            7'b1101111: begin
+                RegWrite_o  = 1;
+                ImmSrc_o    = 3'b100;
+                ALUOp       = 2'b00; 
+                jump        = 1;
+                ResultSrc_o = 2'b10; 
+            end
+            // JALR
+            7'b1100111: begin
+                RegWrite_o  = 1;
+                ALUSrc_o    = 1;
+                ImmSrc_o    = 3'b000;
+                ALUOp       = 2'b00;
+                jalr        = 1;
+                ResultSrc_o = 2'b10;
+            end
+            // LUI
+            7'b0110111: begin
+                RegWrite_o = 1;
+                ALUSrc_o   = 1;
+                ImmSrc_o   = 3'b011;
+                ALUOp      = 2'b11; 
+            end
+            default: ;
+        endcase
     end
-end
+
+    // ALU Decoder
+    always_comb begin
+        case(ALUOp)
+            2'b00: ALUControl_o = 3'b000; // ADD
+            2'b01: ALUControl_o = 3'b001; // SUB 
+            2'b11: ALUControl_o = 3'b100; // LUI 
+            // R-Type or I-Type, decided by funct3
+            2'b10: begin
+                case (funct3_i)
+                    // ADD or SUB/ADDI, decided by funct7 and op_i[5]
+                    3'b000: ALUControl_o = (funct7_i && op_i[5]) ? 3'b001 : 3'b000;
+                    3'b001: ALUControl_o = 3'b110; // SLL
+                    3'b010: ALUControl_o = 3'b101; // SLT
+                    3'b110: ALUControl_o = 3'b011; // OR
+                    3'b111: ALUControl_o = 3'b010; // AND
+                    default: ALUControl_o = 3'b000;
+                endcase
+            end
+            default: ALUControl_o = 3'b000;
+        endcase
+    end
+
+    // PC Source Selector
+    always_comb begin
+        if (jump)       PCSrc_o = 2'b01; // JAL
+        else if (jalr)  PCSrc_o = 2'b10; // JALR
+        else if (branch) begin
+            case (funct3_i)
+                3'b000:  PCSrc_o = (Zero_i)  ? 2'b01 : 2'b00; // BEQ
+                3'b001:  PCSrc_o = (!Zero_i) ? 2'b01 : 2'b00; // BNE
+                default: PCSrc_o = 2'b00;
+            endcase
+        end 
+        else        PCSrc_o = 2'b00; // Next instruction PC + 4
+    end
 
 endmodule
