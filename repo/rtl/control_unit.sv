@@ -74,6 +74,7 @@ module control_unit(
                 ImmSrc_o    = 3'b000;
                 ALUOp       = 2'b00;
                 jalr        = 1;
+                Jump_o        = 1;
                 ResultSrc_o = 2'b10;
             end
             // LUI
@@ -110,6 +111,6 @@ module control_unit(
     end
 
     
-
+    
 
 endmodule
