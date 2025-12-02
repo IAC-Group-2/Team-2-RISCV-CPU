@@ -1,7 +1,7 @@
 module regfile #(
-    ADDRESS_WIDTH = 5,
-    DATA_WIDTH = 32
-) (
+    parameter   ADDRESS_WIDTH = 5,
+                DATA_WIDTH = 32
+)(
     input   logic                       clk_i,
     input   logic [ADDRESS_WIDTH-1:0]   A1_i,
     input   logic [ADDRESS_WIDTH-1:0]   A2_i,
@@ -12,17 +12,20 @@ module regfile #(
     output  logic [DATA_WIDTH-1:0]      RD2_o,
     output  logic [DATA_WIDTH-1:0]      A0_o
 );
-    //create ram with the defined logic
+
     logic [DATA_WIDTH-1:0] mem [2**ADDRESS_WIDTH-1:0];
 
-    //write on posedge of clock
-    always_ff@(posedge clk_i) begin
-        if (WE3_i)
+    // register write (prevent writing to x0)
+    always_ff @(posedge clk_i) begin
+        if (WE3_i && (A3_i != 5'b0)) begin
             mem[A3_i] <= WD3_i;
+        end
     end
 
-    //read commands
-    assign RD1_o = mem[A1_i];
-    assign RD2_o = mem[A2_i];
+    // register x0 is constant value 0
+    assign RD1_o = (A1_i == 5'b0) ? {DATA_WIDTH{1'b0}} : mem[A1_i];
+    assign RD2_o = (A2_i == 5'b0) ? {DATA_WIDTH{1'b0}} : mem[A2_i];
+    
     assign A0_o = mem[10];
+
 endmodule
