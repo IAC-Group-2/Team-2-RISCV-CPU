@@ -14,6 +14,9 @@ module pip_reg_m #( //Execute to memory stage
     input   logic                           MemWriteE_i, //Execute
     output  logic                           MemWriteM_o, //Memory
 
+    input   logic [2:0]                     funct3E_i, // Execute
+    output  logic [2:0]                     funct3M_o, // Memory
+
     input   logic [INSTRUCTION_WIDTH-1:0]   ALUResultE_i, //Execute
     output  logic [INSTRUCTION_WIDTH-1:0]   ALUResultM_o, //Memory
 
@@ -32,11 +35,12 @@ always_ff @(posedge clk_i) begin
    
     RegWriteM_o     <= RegWriteE_i;     
     ResultSrcM_o    <= ResultSrcE_i;    
-    MemWriteM_o     <= MemWriteE_i;     
+    MemWriteM_o     <= MemWriteE_i; 
+    funct3M_o       <= funct3E_i;    
     ALUResultM_o    <= ALUResultE_i;    
     WriteDataM_o    <= WriteDataE_i;    
     RdM_o           <= RdE_i;
-    PCPlus4M_o      <= PCPlus4E_i;       
+    PCPlus4M_o      <= PCPlus4E_i;
    
     
 end
