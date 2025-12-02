@@ -8,7 +8,6 @@ module control_unit(
     output  logic           ALUSrc_o,
     output  logic   [2:0]   ImmSrc_o,
     output  logic   [1:0]   ResultSrc_o,
-    output  logic   [1:0]   PCSrc_o,
     output  logic           Jump_o,
     output  logic           Branch_o
 );
