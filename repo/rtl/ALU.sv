@@ -39,6 +39,4 @@ module ALU #(
         endcase
     end
 
-    assign Zero_o = (ALUResult_o == {DATA_WIDTH{1'b0}});
-
 endmodule
