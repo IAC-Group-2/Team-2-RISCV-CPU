@@ -33,11 +33,14 @@ module ALU #(
                 ALUResult_o = SrcA_i << SrcB_i[4:0]; // SLL
             end
             3'b101: begin // SLT
-                if ($signed(SrcA_i) < $signed(SrcB_i)) 
-                    ALUResult_o = {{DATA_WIDTH-1{1'b0}}, 1'b1}; 
-                else 
-                    ALUResult_o = {DATA_WIDTH{1'b0}};
+                ALUResult_o = ($signed(SrcA_i) < $signed(SrcB_i)) ? 32'd1 : 32'd0;
+                Zero_o      = ($signed(SrcA_i) < $signed(SrcB_i));  
             end
+            default: begin
+                ALUResult_o = 0;
+                Zero_o = 0;
+            end
+
         endcase
     end
 
