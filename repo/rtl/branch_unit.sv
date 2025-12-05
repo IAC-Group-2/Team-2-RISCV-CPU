@@ -9,10 +9,12 @@ module branch_unit #(
 
     always_comb begin
         case(funct3_i)
-            3'b000: BranchTaken_o = Zero_i;          // BEQ
-            3'b001: BranchTaken_o = !Zero_i;         // BNE
-            3'b100: BranchTaken_o = ALUResult_i[31]; // BLT
-            3'b101: BranchTaken_o = !ALUResult_i[31];// BGE
+            3'b000: BranchTaken_o = Zero_i;                     // BEQ
+            3'b001: BranchTaken_o = !Zero_i;                    // BNE
+            3'b100: BranchTaken_o = $signed(ALUResult_i) < 0;   // BLT (signed)
+            3'b101: BranchTaken_o = $signed(ALUResult_i) >= 0;  // BGE (signed)
+            3'b110: BranchTaken_o = ALUResult_i[31];            // BLTU (unsigned)
+            3'b111: BranchTaken_o = !ALUResult_i[31];           // BGEU (unsigned)
             default: BranchTaken_o = 1'b0;
         endcase
     end
