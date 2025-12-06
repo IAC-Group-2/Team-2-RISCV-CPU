@@ -15,6 +15,7 @@ module cache #(
     
     input   logic                       MemWriteM_i,    //write enable
     input   logic [1:0]                 ResultSrcM_i,   //Read enable when ResultSrcM_i = 2'b01
+    input   logic [2:0]                 funct3_i,       //funct3 for byte/word ops
 
     input   logic [ADDRESS_WIDTH-1:0]   addr_i,         //input address
     input   logic [DATA_WIDTH-1:0]      data_i,         //input data
@@ -23,7 +24,8 @@ module cache #(
     input   logic [DATA_WIDTH-1:0]      mem_rd_data_i,  //data from main memory
     output  logic [ADDRESS_WIDTH-1:0]   mem_addr_o,     //address to main memory
     output  logic                       mem_wr_en_o,    //write enable to main memory
-    output  logic [DATA_WIDTH-1:0]      mem_wr_data_o,  //data to write to main memory **rename
+    output  logic [DATA_WIDTH-1:0]      mem_wr_data_o,  //data to write to main memory
+    output  logic [2:0]                 funct3_o,       //funct3 to main memory
 
     output  logic [DATA_WIDTH-1:0]      data_o,         //output data
     output  logic                       cache_miss_o,   //cache_miss = 1 if didnt find in cache
@@ -35,10 +37,21 @@ module cache #(
     assign rd_en = ResultSrcM_i == 2'b01;
     logic cache_en;
     assign cache_en = (rd_en || wr_en);
+    
+    //byte offset from address for byte operations
+    logic [1:0] byte_offset;
+    assign byte_offset = addr_i[1:0];
+    
+    //check if its a word operation with func3
+    logic is_word_op;
+    assign is_word_op = (funct3_i == 3'b010);
 
     //state machine states
     typedef enum {IDLE, WRITEBACK, FETCH, UPDATE} my_state;
     my_state current_state, next_state;
+    
+    //pass funct3 to memory and change on fetch or writeback state
+    assign funct3_o = (current_state == FETCH || current_state == WRITEBACK) ? 3'b010 : funct3_i;
     
     // U | V1 | Dirty1 | Tag1(22 bits) | Data 1 (32 bits) | V2 | Dirty2 | Tag2 (22 bits) | Data 2 (32 bits)
     logic [CACHE_WIDTH-1:0] cache_array [2**SET_SIZE-1:0];
@@ -122,12 +135,52 @@ module cache #(
         end
     end
 
-    //output data
+    //output data for no byte offset extraction
+    logic [DATA_WIDTH-1:0] raw_cache_data;
+    logic [DATA_WIDTH-1:0] raw_mem_data;
+    
     always_comb begin
+        raw_cache_data = tag_1_hit ? cache_data_1 : cache_data_0;
+        raw_mem_data = mem_rd_data_i;
+        
         if (current_state == IDLE && cache_hit) begin
-            data_o = tag_1_hit ? cache_data_1 : cache_data_0;
+            if (is_word_op) begin
+                data_o = raw_cache_data;
+            end 
+            //dependant on byte offset set data out 
+            else begin
+                if (byte_offset == 2'b00) begin
+                    data_o = {24'b0, raw_cache_data[7:0]};
+                end
+                else if (byte_offset == 2'b01) begin
+                    data_o = {24'b0, raw_cache_data[15:8]};
+                end
+                else if (byte_offset == 2'b10) begin
+                    data_o = {24'b0, raw_cache_data[23:16]};
+                end
+                else begin
+                    data_o = {24'b0, raw_cache_data[31:24]};
+                end
+            end
         end else if (current_state == UPDATE) begin
-            data_o = mem_rd_data_i;
+            if (is_word_op) begin
+                data_o = raw_mem_data;
+            end
+            //dependant on byte offset set data out 
+            else begin
+                if (byte_offset == 2'b00) begin
+                    data_o = {24'b0, raw_mem_data[7:0]};
+                end
+                else if (byte_offset == 2'b01) begin
+                    data_o = {24'b0, raw_mem_data[15:8]};
+                end
+                else if (byte_offset == 2'b10) begin
+                    data_o = {24'b0, raw_mem_data[23:16]};
+                end
+                else begin
+                    data_o = {24'b0, raw_mem_data[31:24]};
+                end
+            end
         end else begin
             data_o = 32'b0;
         end
@@ -147,8 +200,8 @@ module cache #(
                 mem_wr_data_o = target_data;
             end
             FETCH: begin
-                //fetch new data from memory
-                mem_addr_o = addr_i;
+                //fetch new data from memory with byte offset set to 0
+                mem_addr_o = {addr_i[ADDRESS_WIDTH-1:2], 2'b00};
                 mem_wr_en_o = 1'b0;
             end
             default: begin
@@ -164,6 +217,7 @@ module cache #(
 
     //state machine next state logic
     always_comb begin
+        next_state = current_state;
         case (current_state)
             IDLE: begin
                 if (cache_miss) begin
@@ -171,6 +225,8 @@ module cache #(
                         next_state = WRITEBACK;
                     else
                         next_state = FETCH;
+                end else begin
+                    next_state = IDLE;
                 end
             end
             WRITEBACK: begin
@@ -183,7 +239,7 @@ module cache #(
                 next_state = IDLE;
             end
             default:
-                next_state = current_state;
+                next_state = IDLE;
         endcase
     end
 
@@ -204,11 +260,42 @@ module cache #(
                         if (wr_en) begin
                             //write hit update data and set LRU and dirty bit (already set data out)
                             if (tag_0_hit) begin
-                                cache_array[set_addr][DATA_WIDTH-1:0] <= data_i;
+                                if (is_word_op) begin
+                                    cache_array[set_addr][DATA_WIDTH-1:0] <= data_i;
+                                end else begin
+                                    if (byte_offset == 2'b00) begin
+                                        cache_array[set_addr][7:0] <= data_i[7:0];
+                                    end
+                                    else if (byte_offset == 2'b01) begin
+                                        cache_array[set_addr][15:8] <= data_i[7:0];
+                                    end
+                                    else if (byte_offset == 2'b10) begin
+                                        cache_array[set_addr][23:16] <= data_i[7:0];
+                                    end
+                                    else begin
+                                        cache_array[set_addr][31:24] <= data_i[7:0];
+                                    end
+                                end
                                 cache_array[set_addr][DATA_WIDTH + TAG_SIZE] <= 1'b1;
                                 cache_array[set_addr][CACHE_WIDTH-1] <= 1'b1;
                             end else if (tag_1_hit) begin
-                                cache_array[set_addr][WAY_WIDTH + DATA_WIDTH - 1 : WAY_WIDTH] <= data_i;
+                                if (is_word_op) begin
+                                    cache_array[set_addr][WAY_WIDTH + DATA_WIDTH - 1 : WAY_WIDTH] <= data_i;
+                                end else begin
+                                    //byte write merge byte into existing word
+                                    if (byte_offset == 2'b00) begin
+                                        cache_array[set_addr][WAY_WIDTH+7:WAY_WIDTH] <= data_i[7:0];
+                                    end
+                                    else if (byte_offset == 2'b01) begin
+                                        cache_array[set_addr][WAY_WIDTH+15:WAY_WIDTH+8] <= data_i[7:0];
+                                    end
+                                    else if (byte_offset == 2'b10) begin
+                                        cache_array[set_addr][WAY_WIDTH+23:WAY_WIDTH+16] <= data_i[7:0];
+                                    end
+                                    else begin
+                                        cache_array[set_addr][WAY_WIDTH+31:WAY_WIDTH+24] <= data_i[7:0];
+                                    end
+                                end
                                 cache_array[set_addr][WAY_WIDTH + DATA_WIDTH + TAG_SIZE] <= 1'b1;
                                 cache_array[set_addr][CACHE_WIDTH-1] <= 1'b0;
                             end
@@ -225,16 +312,60 @@ module cache #(
                     //fill cache with fetched data
                     if (target_way == 1'b0) begin
                         //update way 0: {valid, dirty, tag, data}
-                        cache_array[set_addr][DATA_WIDTH-1:0] <= wr_en ? data_i : mem_rd_data_i; //data
+                        if (wr_en) begin
+                            if (is_word_op) begin
+                                cache_array[set_addr][DATA_WIDTH-1:0] <= data_i;
+                            end else begin
+                                //byte write miss merge byte into fetched word
+                                cache_array[set_addr][DATA_WIDTH-1:0] <= mem_rd_data_i;
+                                if (byte_offset == 2'b00) begin
+                                    cache_array[set_addr][7:0] <= data_i[7:0];
+                                end
+                                else if (byte_offset == 2'b01) begin
+                                    cache_array[set_addr][15:8] <= data_i[7:0];
+                                end
+                                else if (byte_offset == 2'b10) begin
+                                    cache_array[set_addr][23:16] <= data_i[7:0];
+                                end
+                                else begin
+                                    cache_array[set_addr][31:24] <= data_i[7:0];
+                                end
+                            end
+                            cache_array[set_addr][DATA_WIDTH + TAG_SIZE] <= 1'b1; //dirty
+                        end else begin
+                            cache_array[set_addr][DATA_WIDTH-1:0] <= mem_rd_data_i;
+                            cache_array[set_addr][DATA_WIDTH + TAG_SIZE] <= 1'b0; //not dirty
+                        end
                         cache_array[set_addr][WAY_WIDTH-3:DATA_WIDTH] <= tag_addr; //tag
-                        cache_array[set_addr][DATA_WIDTH + TAG_SIZE] <= wr_en ? 1'b1 : 1'b0; //dirty
                         cache_array[set_addr][WAY_WIDTH-1] <= 1'b1; //valid
                         cache_array[set_addr][CACHE_WIDTH-1] <= 1'b1; //LRU
                     end else begin
                         //update way 1
-                        cache_array[set_addr][WAY_WIDTH + DATA_WIDTH - 1 : WAY_WIDTH] <= wr_en ? data_i : mem_rd_data_i; //data
+                        if (wr_en) begin
+                            if (is_word_op) begin
+                                cache_array[set_addr][WAY_WIDTH + DATA_WIDTH - 1 : WAY_WIDTH] <= data_i;
+                            end else begin
+                                //byte write miss: merge byte into fetched word
+                                cache_array[set_addr][WAY_WIDTH + DATA_WIDTH - 1 : WAY_WIDTH] <= mem_rd_data_i;
+                                if (byte_offset == 2'b00) begin
+                                    cache_array[set_addr][WAY_WIDTH + 7  : WAY_WIDTH] <= data_i[7:0];
+                                end
+                                else if (byte_offset == 2'b01) begin
+                                    cache_array[set_addr][WAY_WIDTH + 15 : WAY_WIDTH + 8] <= data_i[7:0];
+                                end
+                                else if (byte_offset == 2'b10) begin
+                                    cache_array[set_addr][WAY_WIDTH + 23 : WAY_WIDTH + 16] <= data_i[7:0];
+                                end
+                                else begin
+                                    cache_array[set_addr][WAY_WIDTH + 31 : WAY_WIDTH + 24] <= data_i[7:0];
+                                end
+                            end
+                            cache_array[set_addr][WAY_WIDTH + DATA_WIDTH + TAG_SIZE] <= 1'b1; //dirty
+                        end else begin
+                            cache_array[set_addr][WAY_WIDTH + DATA_WIDTH-1 : WAY_WIDTH] <= mem_rd_data_i;
+                            cache_array[set_addr][WAY_WIDTH + DATA_WIDTH + TAG_SIZE] <= 1'b0; //not dirty
+                        end
                         cache_array[set_addr][WAY_WIDTH + WAY_WIDTH - 3 : WAY_WIDTH + DATA_WIDTH] <= tag_addr; //tag
-                        cache_array[set_addr][WAY_WIDTH + DATA_WIDTH + TAG_SIZE] <= wr_en ? 1'b1 : 1'b0; //dirty
                         cache_array[set_addr][2*WAY_WIDTH-1] <= 1'b1; //valid
                         cache_array[set_addr][CACHE_WIDTH-1] <= 1'b0; //LRU
                     end
