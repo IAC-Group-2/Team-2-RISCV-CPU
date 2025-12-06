@@ -61,6 +61,9 @@ module top #(
     logic[DATA_WIDTH-1:0]           RD2D;
     logic[DATA_WIDTH-1:0]           RD2E;
 
+    //Branch Unit Output
+    logic                           Branch_Taken;
+
 
     //Extend Output
     logic[DATA_WIDTH-1:0]           ImmExtD;
@@ -298,7 +301,8 @@ module top #(
     branch_unit branch_unit (
         .funct3_i(funct3E),
         .Zero_i(ZeroE),
-        .ALUResult_i(ALUResultE),
+        .SrcA_i(SrcAE_final),
+        .SrcB_i(SrcBE),
         .BranchTaken_o(Branch_Taken)
     );
 

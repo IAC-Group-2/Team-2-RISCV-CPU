@@ -54,6 +54,7 @@ module data_memory #(
                 data_o = {16'b0, ram_array[addr_idx+1], 
                 ram_array[addr_idx]
                 };
+            default: data_o = 32'b0;
         endcase
     end
 
