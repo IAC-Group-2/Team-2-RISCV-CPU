@@ -4,7 +4,7 @@
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 TEST_FOLDER=$(realpath "$SCRIPT_DIR")
-RTL_FOLDER=$(realpath "$SCRIPT_DIR/../../rtl")
+RTL_FOLDER=$(realpath "$SCRIPT_DIR/../../../rtl")
 OUT_FOLDER="$SCRIPT_DIR/../test_out/component_tests"
 GREEN=$(tput setaf 2)
 RED=$(tput setaf 1)
@@ -25,11 +25,12 @@ cd "$SCRIPT_DIR"
 
 #clean previous output safely
 rm -rf "${OUT_FOLDER:?}"/*
-
-for file in "${TEST_FOLDER}"/component_tests/*_tb.cpp; do
+for file in "${TEST_FOLDER}"/*_tb.cpp; do
     name=$(basename "$file" _tb.cpp)
 
     echo "Running $name..."
+
+    rm -rf obj_dir
 
     verilator -Wall --trace \
         -cc "${RTL_FOLDER}/${name}.sv" \
@@ -53,7 +54,9 @@ for file in "${TEST_FOLDER}"/component_tests/*_tb.cpp; do
     fi
 
     #stash build output per test
-    mv obj_dir "${OUT_FOLDER}/${name}_obj_dir"
+    if [ -d obj_dir ]; then
+        mv obj_dir "${OUT_FOLDER}/${name}_obj_dir"
+    fi
 done
 
 echo "Passed: ${passes}"
