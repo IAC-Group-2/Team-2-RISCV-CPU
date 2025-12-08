@@ -32,8 +32,8 @@ TEST_F(TB_NAME, AddiDecodeTest)
     EXPECT_EQ(top->RegWrite_o, 1);
     EXPECT_EQ(top->ALUControl_o, 0b000);
     EXPECT_EQ(top->ALUSrc_o, 1);
-    EXPECT_EQ(top->ImmSrc_o, 3'b000);
-    EXPECT_EQ(top->ResultSrc_o, 2'b00);
+    EXPECT_EQ(top->ImmSrc_o, 0b000);
+    EXPECT_EQ(top->ResultSrc_o, 0b00);
     EXPECT_EQ(top->Branch_o, 0);
 }
 
@@ -45,7 +45,7 @@ TEST_F(TB_NAME, LoadDecodeTest)
     top->eval();
 
     EXPECT_EQ(top->RegWrite_o, 1);
-    EXPECT_EQ(top->ResultSrc_o, 2'b01);
+    EXPECT_EQ(top->ResultSrc_o, 0b01);
     EXPECT_EQ(top->ALUSrc_o, 1);
     EXPECT_EQ(top->MemWrite_o, 0);
 }
@@ -60,7 +60,7 @@ TEST_F(TB_NAME, StoreDecodeTest)
     EXPECT_EQ(top->RegWrite_o, 0);
     EXPECT_EQ(top->MemWrite_o, 1);
     EXPECT_EQ(top->ALUSrc_o, 1);
-    EXPECT_EQ(top->ImmSrc_o, 3'b010);
+    EXPECT_EQ(top->ImmSrc_o, 0b010);
 }
 
 // BNE branch decode
@@ -73,7 +73,7 @@ TEST_F(TB_NAME, BneDecodeTest)
     EXPECT_EQ(top->Branch_o, 1);
     EXPECT_EQ(top->ALUControl_o, 0b001);
     EXPECT_EQ(top->ALUSrc_o, 0);
-    EXPECT_EQ(top->ImmSrc_o, 3'b001);
+    EXPECT_EQ(top->ImmSrc_o, 0b001);
 }
 
 // default decode
