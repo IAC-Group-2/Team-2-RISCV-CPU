@@ -6,9 +6,7 @@ module top #(
 ) (
     input   logic                   clk,
     input   logic                   rst,
-    /* verilator lint_off UNUSED */
-    input   logic                   trigger,
-    /* verilator lint_off UNUSED */
+    input   logic                   trigger, // Removed to prevent warnings
     output  logic [DATA_WIDTH-1:0]  a0
 );
 
@@ -48,8 +46,9 @@ module top #(
     logic                           JumpE;
     logic                           BranchD;
     logic                           BranchE;
-    logic [3:0]                     ALUControlD;
-    logic [3:0]                     ALUControlE;
+    logic                           Branch_Taken;
+    logic [2:0]                     ALUControlD;
+    logic [2:0]                     ALUControlE;
     logic                           ALUSrcD;
     logic                           ALUSrcE;
     logic [2:0]                     ImmSrcD;
@@ -61,13 +60,11 @@ module top #(
     logic[DATA_WIDTH-1:0]           RD2D;
     logic[DATA_WIDTH-1:0]           RD2E;
 
-    //Branch Unit Output
-    logic                           Branch_Taken;
-
 
     //Extend Output
     logic[DATA_WIDTH-1:0]           ImmExtD;
     logic[DATA_WIDTH-1:0]           ImmExtE;
+
 
     //ALU Input Wires
     logic[DATA_WIDTH-1:0]           WriteDataE;
@@ -88,12 +85,23 @@ module top #(
     logic[DATA_WIDTH-1:0]           ReadDataM; //Memory
     logic[DATA_WIDTH-1:0]           ReadDataW; //Writeback
 
+    //Cache to memory interface
+    logic[DATA_WIDTH-1:0]           MemRdData;    //memory output
+    logic[DATA_WIDTH-1:0]           CacheMemAddr;   //cache to memory address
+    logic                           CacheMemWrEn;   //cache to memory write enable
+    logic[DATA_WIDTH-1:0]           CacheMemWrData; //cache to memory write data
+    logic                           CacheStall;     //cache stall signal
+    logic                           CacheMiss;      //cache miss signal
+
     //Mux 2
     logic[DATA_WIDTH-1:0]           ResultW;
 
     //Hazard Unit
     logic                           StallF;
     logic                           StallD;
+    logic                           StallE;
+    logic                           StallM;
+    logic                           StallW;
     logic                           FlushD;
     logic                           FlushE;
     logic[1:0]                      ForwardAE;
@@ -104,14 +112,10 @@ module top #(
     logic [2:0]                     funct3;
     logic                           funct7;
     
+    // Pipeline register helpers
     // Need to pass funct3 to execute stage for branch handling
     logic [2:0]                     funct3E; 
     logic [2:0]                     funct3M;
-    
-    // AUIPC
-    logic                            ALUSrcAD;
-    logic                            ALUSrcAE;
-    logic [DATA_WIDTH-1:0]           SrcAE_final;
 
     // Fetch stage
     mux_reg PC_Mux (
@@ -182,7 +186,6 @@ module top #(
         .MemWrite_o(MemWriteD),
         .ALUControl_o(ALUControlD),
         .ALUSrc_o(ALUSrcD),
-        .ALUSrcA_o(ALUSrcAD),
         .ImmSrc_o(ImmSrcD),
         .ResultSrc_o(ResultSrcD),
         .Jump_o(JumpD),
@@ -219,10 +222,14 @@ module top #(
         .RegWriteM_i(RegWriteM),
         .RegWriteW_i(RegWriteW),
         .PCSrcE_i(PCSrcE),
+        .CacheStall_i(CacheStall),
         .ForwardAE_o(ForwardAE),
         .ForwardBE_o(ForwardBE),
         .StallF_o(StallF),
         .StallD_o(StallD),
+        .StallE_o(StallE),
+        .StallM_o(StallM),
+        .StallW_o(StallW),
         .FlushD_o(FlushD),
         .FlushE_o(FlushE)
     );
@@ -230,6 +237,7 @@ module top #(
     pip_reg_e pip_reg_e(
         .clk_i(clk), 
         .clr_i(FlushE),
+        .en_i(!StallE),
         .RegWriteD_i(RegWriteD),
         .RegWriteE_o(RegWriteE),
         .ResultSrcD_i(ResultSrcD),
@@ -244,8 +252,6 @@ module top #(
         .ALUControlE_o(ALUControlE),
         .ALUSrcD_i(ALUSrcD),
         .ALUSrcE_o(ALUSrcE),
-        .ALUSrcAD_i(ALUSrcAD),
-        .ALUSrcAE_o(ALUSrcAE),
         .funct3D_i(funct3),
         .funct3E_o(funct3E),
         .RD1D_i(RD1D),
@@ -284,14 +290,10 @@ module top #(
         .out_o(WriteDataE)
     );
 
-    // ALU SrcA Mux - with AUIPC
-    assign SrcAE_final = ALUSrcAE ? PCE : SrcAE;
-
-    // ALU mux SrcB 
-    assign SrcBE = ALUSrcE ? ImmExtE : WriteDataE;
+    assign SrcBE = ALUSrcE ? ImmExtE : WriteDataE; 
 
     ALU ALU (
-        .SrcA_i(SrcAE_final),
+        .SrcA_i(SrcAE),
         .SrcB_i(SrcBE),
         .ALUControl_i(ALUControlE),
         .ALUResult_o(ALUResultE),
@@ -301,8 +303,7 @@ module top #(
     branch_unit branch_unit (
         .funct3_i(funct3E),
         .Zero_i(ZeroE),
-        .SrcA_i(SrcAE_final),
-        .SrcB_i(SrcBE),
+        .ALUResult_i(ALUResultE),
         .BranchTaken_o(Branch_Taken)
     );
 
@@ -311,6 +312,7 @@ module top #(
 
     pip_reg_m pip_reg_m(
         .clk_i(clk),
+        .en_i(!StallM),
         .RegWriteE_i(RegWriteE),
         .RegWriteM_o(RegWriteM),
         .ResultSrcE_i(ResultSrcE),
@@ -330,17 +332,38 @@ module top #(
     );
 
     // Memory stage
-    data_memory data_memory(
+    logic [2:0] CacheFunct3; //funct3 passed through cache to memory
+    
+    cache cache(
         .clk_i(clk),
-        .wr_en_i(MemWriteM),
+        .rst_i(rst),
+        .MemWriteM_i(MemWriteM),
+        .ResultSrcM_i(ResultSrcM),
+        .funct3_i(funct3M),
         .addr_i(ALUResultM),
         .data_i(WriteDataM),
+        .mem_rd_data_i(MemRdData),
+        .mem_addr_o(CacheMemAddr),
+        .mem_wr_en_o(CacheMemWrEn),
+        .mem_wr_data_o(CacheMemWrData),
+        .funct3_o(CacheFunct3),
         .data_o(ReadDataM),
-        .funct3_i(funct3M)
+        .cache_miss_o(CacheMiss),
+        .stall_o(CacheStall)
+    );
+
+    data_memory data_memory(
+        .clk_i(clk),
+        .wr_en_i(CacheMemWrEn),
+        .addr_i(CacheMemAddr),
+        .data_i(CacheMemWrData),
+        .data_o(MemRdData),
+        .funct3_i(CacheFunct3)
     );
 
     pip_reg_w pip_reg_w(
         .clk_i(clk),
+        .en_i(!StallW),
         .RegWriteM_i(RegWriteM),
         .RegWriteW_o(RegWriteW),
         .ResultSrcM_i(ResultSrcM),
