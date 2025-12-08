@@ -1,5 +1,5 @@
 /*
- *  Component testbench for pip_reg_m
+ *  Component testbench for pip_reg_m (EX/MEM)
  */
 
 #include "base_testbench.h"
@@ -16,6 +16,7 @@ protected:
     void initializeInputs() override
     {
         top->clk_i = 0;
+        top->en_i = 1;
         top->RegWriteE_i = 0;
         top->ResultSrcE_i = 0;
         top->MemWriteE_i = 0;
@@ -27,29 +28,47 @@ protected:
     }
 };
 
-TEST_F(TB_NAME, PipelineMTest)
+TEST_F(TB_NAME, LatchesExecuteToMemory)
 {
     top->RegWriteE_i = 1;
     top->ResultSrcE_i = 0b01;
     top->MemWriteE_i = 1;
-    top->funct3E_i = 0x010;
+    top->funct3E_i = 0b010;
     top->ALUResultE_i = 0xAAAABBBB;
     top->WriteDataE_i = 0xCCCCDDDD;
     top->RdE_i = 0x1A;
     top->PCPlus4E_i = 0x20;
-    top->en_i = 1;
 
     top->clk_i = 0; top->eval();
     top->clk_i = 1; top->eval();
 
     EXPECT_EQ(top->RegWriteM_o, 1);
-    EXPECT_EQ(top->ResultSrcM_o, 1);
+    EXPECT_EQ(top->ResultSrcM_o, 1u);
     EXPECT_EQ(top->MemWriteM_o, 1);
-    EXPECT_EQ(top->funct3M_o, 0x010);
+    EXPECT_EQ(top->funct3M_o, 0b010);
     EXPECT_EQ(top->ALUResultM_o, 0xAAAABBBB);
     EXPECT_EQ(top->WriteDataM_o, 0xCCCCDDDD);
     EXPECT_EQ(top->RdM_o, 0x1A);
-    EXPECT_EQ(top->PCPlus4M_o, 0x20);
+    EXPECT_EQ(top->PCPlus4M_o, 0x20u);
+}
+
+TEST_F(TB_NAME, HoldWhenStalled)
+{
+    // initial latch
+    top->RegWriteE_i = 1;
+    top->ALUResultE_i = 0x1;
+    top->clk_i = 0; top->eval();
+    top->clk_i = 1; top->eval();
+
+    // stall
+    top->en_i = 0;
+    top->RegWriteE_i = 0;
+    top->ALUResultE_i = 0x2;
+    top->clk_i = 0; top->eval();
+    top->clk_i = 1; top->eval();
+
+    EXPECT_EQ(top->RegWriteM_o, 1);
+    EXPECT_EQ(top->ALUResultM_o, 0x1u);
 }
 
 int main(int argc, char **argv)

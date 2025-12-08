@@ -1,5 +1,5 @@
 /*
- *  Component testbench for pip_reg_w
+ *  Component testbench for pip_reg_w (MEM/WB)
  */
 
 #include "base_testbench.h"
@@ -16,6 +16,7 @@ protected:
     void initializeInputs() override
     {
         top->clk_i = 0;
+        top->en_i = 1;
         top->RegWriteM_i = 0;
         top->ResultSrcM_i = 0;
         top->ALUResultM_i = 0;
@@ -25,7 +26,7 @@ protected:
     }
 };
 
-TEST_F(TB_NAME, PipelineWTest)
+TEST_F(TB_NAME, LatchesMemoryToWriteback)
 {
     top->RegWriteM_i = 1;
     top->ResultSrcM_i = 0b10;
@@ -33,17 +34,31 @@ TEST_F(TB_NAME, PipelineWTest)
     top->ReadDataM_i = 0xA5A5A5A5;
     top->RdM_i = 0x0F;
     top->PCPlus4M_i = 0x40;
-    top->en_i = 1;
 
     top->clk_i = 0; top->eval();
     top->clk_i = 1; top->eval();
 
     EXPECT_EQ(top->RegWriteW_o, 1);
-    EXPECT_EQ(top->ResultSrcW_o, 2);
+    EXPECT_EQ(top->ResultSrcW_o, 2u);
     EXPECT_EQ(top->ALUResultW_o, 0xDEADBEEF);
     EXPECT_EQ(top->ReadDataW_o, 0xA5A5A5A5);
     EXPECT_EQ(top->RdW_o, 0x0F);
-    EXPECT_EQ(top->PCPlus4W_o, 0x40);
+    EXPECT_EQ(top->PCPlus4W_o, 0x40u);
+}
+
+TEST_F(TB_NAME, HoldOnStall)
+{
+    top->RegWriteM_i = 1;
+    top->ALUResultM_i = 0x11111111;
+    top->clk_i = 0; top->eval();
+    top->clk_i = 1; top->eval();
+
+    top->en_i = 0;
+    top->ALUResultM_i = 0x22222222;
+    top->clk_i = 0; top->eval();
+    top->clk_i = 1; top->eval();
+
+    EXPECT_EQ(top->ALUResultW_o, 0x11111111);
 }
 
 int main(int argc, char **argv)

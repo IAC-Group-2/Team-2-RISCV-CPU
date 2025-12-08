@@ -1,5 +1,5 @@
 /*
- *  Component testbench for pip_reg_d
+ *  Component testbench for pip_reg_d (IF/ID)
  */
 
 #include "base_testbench.h"
@@ -24,7 +24,6 @@ protected:
     }
 };
 
-//pass values if enable is high
 TEST_F(TB_NAME, PassThroughOnEnable)
 {
     top->PCF_i = 0x10;
@@ -34,12 +33,11 @@ TEST_F(TB_NAME, PassThroughOnEnable)
     top->clk_i = 0; top->eval();
     top->clk_i = 1; top->eval();
 
-    EXPECT_EQ(top->PCD_o, 0x10);
-    EXPECT_EQ(top->InstrD_o, 0x12345678);
-    EXPECT_EQ(top->PCPlus4D_o, 0x14);
+    EXPECT_EQ(top->PCD_o, 0x10u);
+    EXPECT_EQ(top->InstrD_o, 0x12345678u);
+    EXPECT_EQ(top->PCPlus4D_o, 0x14u);
 }
 
-//output 0 when clear is high
 TEST_F(TB_NAME, ClearZerosOutputs)
 {
     top->PCF_i = 0xAA;
@@ -50,11 +48,10 @@ TEST_F(TB_NAME, ClearZerosOutputs)
     top->clk_i = 0; top->eval();
     top->clk_i = 1; top->eval();
 
-    EXPECT_EQ(top->InstrD_o, 0);
-    EXPECT_EQ(top->PCPlus4D_o, 0);
+    EXPECT_EQ(top->InstrD_o, 0u);
+    EXPECT_EQ(top->PCPlus4D_o, 0u);
 }
 
-//hold values on stall
 TEST_F(TB_NAME, HoldOnStall)
 {
     top->PCF_i = 0x10;
@@ -72,8 +69,8 @@ TEST_F(TB_NAME, HoldOnStall)
     top->clk_i = 0; top->eval();
     top->clk_i = 1; top->eval();
 
-    EXPECT_EQ(top->PCD_o, 0x10);
-    EXPECT_EQ(top->InstrD_o, 0x2222);
+    EXPECT_EQ(top->PCD_o, 0x10u);
+    EXPECT_EQ(top->InstrD_o, 0x2222u);
 }
 
 int main(int argc, char **argv)
