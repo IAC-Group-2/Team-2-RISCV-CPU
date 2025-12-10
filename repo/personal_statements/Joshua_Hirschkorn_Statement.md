@@ -1,6 +1,6 @@
 # **RISC-V RV32I Processor Coursework**
 
-#### *Joshua [Your Surname] | CID: [Your CID] | GitHub: [Your Username]*
+#### *Joshua Hirschkorn | CID: 02378306 | GitHub: vortexisalpha
 
 # Personal Statement
 
@@ -302,7 +302,7 @@ The hazard unit was one of my contributions, implementing data forwarding, stall
 
 Planning on video call diagram:
 
-![pipeline_diagram](./personal_statement_assets/Pasted%20image%2020251209214840.png)
+![](./personal_statement_assets/Pasted%20image%2020251209214840.png)
 
 We used the Digital Design and Computer Architecture text book as a guide to the top level units and base naming conventions for this stage. We also spoke about how we were going to deal with all the stalls and flushing logic.
 #### Data Forwarding Logic
@@ -321,7 +321,7 @@ Cycle n+1:
 
 The way we use forward logic is dependant on signals `ForwardAE` and `ForwardBE` outputted from the hazard unit. We can control the input to the ALU with MUXs to give us signals from later stages `ALUResultM` or `ResultW`:
 
-![[Pasted image 20251209224754.png]]
+![](./personal_statement_assets/Pasted%20image%2020251209224754.png)
 
 The following logic will detect if a register in the previous cycle needs a value that is already calculated in a further stage, we then "forward" the signal such that the stage executing the command is aware of this update:
 
@@ -395,7 +395,7 @@ I2: add x6, x5, x2 // we need x5 here
 
 This requires stalling in the hazard unit to detect if we need a stall based on `ResultSrcE0` and weather we are using the same register as being written to memory.
 
-![[Pasted image 20251209225057.png]]
+![](./personal_statement_assets/Pasted%20image%2020251209225057.png)
 
 Note that `ResultSRC0` is the first bit of `ResultSRC` which controls weather we are reading or writing to the register file. We need this to detect load and write instructions with the following logic:
 
@@ -563,11 +563,13 @@ Working with Yichan, we designed and implemented a 2-way set associative write b
 
 Here are a few sketches from our video calls:
 
-![[Pasted image 20251209191802.png | 700]]![[Pasted image 20251209191830.png| 500]]
+![](./personal_statement_assets/Pasted%20image%2020251209191802.png)
+
+![](./personal_statement_assets/Pasted%20image%2020251209191830.png)
 
 We iterated our initial design quite a few times and came up with this finalised diagram for our cache memory:
 
-![[Pasted image 20251209231525.png]]
+![](./personal_statement_assets/Pasted%20image%2020251209231525.png)
 
 #### Cache Structure
 
@@ -608,7 +610,7 @@ Parameters:
 
 The cache uses a finite state machine to handle cache misses. This is the structure I decided on implementing for the cache miss:
 
-![[Pasted image 20251210183600.png]]
+![](./personal_statement_assets/Pasted%20image%2020251210183600.png)
 
 The state transitions are:
 
@@ -774,9 +776,9 @@ else
 
 An important detail was ensuring `funct3` is passed through the cache to memory for operations that miss:
 
-![[Pasted image 20251210183251.png]]
+![](./personal_statement_assets/Pasted%20image%2020251210183251.png)
 
-![[Pasted image 20251210183416.png]]
+![](./personal_statement_assets/Pasted%20image%2020251210183416.png)
 
 
 The following logic updates funct3_o to the memory based on which state it is. If we are in IDLE state we need it to pass through. All the other ones we can set it to the previous default value of 0b010:
