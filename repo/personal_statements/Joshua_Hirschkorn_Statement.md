@@ -302,7 +302,7 @@ The hazard unit was one of my contributions, implementing data forwarding, stall
 
 Planning on video call diagram:
 
-![pipeline_diagram](./personal_statement_assets/Pasted-image-20251209214840.png)
+![pipeline_diagram](./personal_statement_assets/Pasted%20image%2020251209214840.png)
 
 We used the Digital Design and Computer Architecture text book as a guide to the top level units and base naming conventions for this stage. We also spoke about how we were going to deal with all the stalls and flushing logic.
 #### Data Forwarding Logic
