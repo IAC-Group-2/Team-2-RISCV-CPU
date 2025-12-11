@@ -152,6 +152,16 @@ TEST_F(CpuTestbench, TestBranchInstructions)
     EXPECT_EQ(top_->a0, 100);
 }
 
+TEST_F(CpuTestbench, TestMulstiplyInstructions)
+{
+    setupTest("13_mul");
+    initSimulation();
+    runSimulation(CYCLES); 
+
+    // Expected Checksum: 1,073,741,770
+    // (-50) + (1,073,741,823) + (-2) + (-1)
+    EXPECT_EQ(top_->a0, 1073741770);   
+}
 
 int main(int argc, char **argv)
 {
