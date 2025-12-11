@@ -78,7 +78,11 @@ Please see lab 4 commit history (under the same organisation branch).
 
 ## Pipelined RISC-V Design
 
-![alt text](<../images/Pipeline_Diagram (1).drawio.png>)
+To start we made this diagram and took inspiration from the textbook: Digital Design and Computer Architecture (RISC-V Edition) by Sarah Harris and David Harris (as seen in lecture notes). The piepline registers and hazard unit is highlighted in blue.
+
+![pipeline_diagram](./personal_statement_assets/pipeline_diagram.png)
+
+[See full image here](https://ibb.co/7tk689jL)
 
 ### Pipeline Registers
 
@@ -90,9 +94,7 @@ During the pipeline implementation, my individual contribution is as follows:
 
 #### Implementation
 
-After our team meeting on November 25th, Josh and I took on the pipeline implementation. Pipeline registers are the synchronisation points between stages, they're what makes pipelining work by allowing instructions to overlap while keeping everything correct.
-
-!!ADD IMAGE HERE!!
+After our team meeting on November 25th, Josh and I took on the pipeline implementation. Pipeline registers are the synchronisation points between stages, they're what makes pipelining work by allowing instructions to overlap while keeping everything correct. The pipeline diagram above shows the complete processor with pipeline registers separating each stage, which we used as our reference throughout implementation.
 
 NB: while the recommended textbook outlines 4 different pipeline stages, we decided to arbitrarily name an extra pipleine stage called Prefetch, which is the stage before the pc register (essentially the `fetch` stage).
 
@@ -210,13 +212,17 @@ In contrast, `pip_reg_m` and `pip_reg_w` only have enable logic since they don't
 
 ### Hazard Unit
 
-[System Verilog](../repo/rtl/hazard_unit.sv) | [Testbench](../repo/tb/tests/component_tests/hazard_unit_tb.cpp)
+[System Verilog](../rtl/hazard_unit.sv) | [Testbench](../tb/tests/component_tests/hazard_unit_tb.cpp)
 
 Regarding the hazard unit implementation, Josh and I implemented data forwarding to resolve RAW (read after write) hazards. Moreover, we also implemented handling for lw stalls when a load instruction is followed by an instruction that uses the previously loaded value. As a result, I made hazard unit to generate flush signals for branch/jump instructions.
 
 #### Implementation
 
 I co-designed and implemented the hazard unit with Josh during a video call on November 28th. The hazard unit is basically the 'manager' of the pipeline registers, keeping the pipeline registers 'correct'. The purpose of a hazard unit is to detect data dependencies and decide whether to forward data/stall the pipeline/flush the pipeline.
+
+We used the Digital Design and Computer Architecture textbook as a guide to the top level units and base naming conventions for this stage. During our video call, we sketched out the hazard unit logic on paper, planning how we were going to deal with all the stalls and flushing logic:
+
+![](./personal_statement_assets/Pasted%20image%2020251209214840.png)
 
 **Data Forwarding Logic**:
 
@@ -231,7 +237,11 @@ else if (((Rs1E_i == RdW_i) && RegWriteW_i) && (Rs1E_i != '0)) begin
 end
 ```
 
-The same logic applies for `ForwardBE_o` to handle the second ALU operand:
+The same logic applies for `ForwardBE_o` to handle the second ALU operand.
+
+The way we use forward logic is dependant on signals `ForwardAE` and `ForwardBE` outputted from the hazard unit. We can control the input to the ALU with MUXs to give us signals from later stages `ALUResultM` or `ResultW`. The diagram below illustrates how the forwarding multiplexers select between the register file output (`RD1E`/`RD2E`), the writeback result (`ResultW`), or the memory stage ALU result (`ALUResultM`) based on the forwarding control signals:
+
+![](./personal_statement_assets/Pasted%20image%2020251209224754.png)
 
 The check `Rs1E_i != '0` (and `Rs2E_i != '0`) ensures we don't forward when the register is x0 (hardwired to zero).
 
@@ -244,6 +254,10 @@ When a load instruction (`ResultSrcE0_i = 1`) is in the execute stage and the fo
 ```systemverilog
 lwStall = ResultSrcE0_i && ((Rs1D_i == RdE_i) || (Rs2D_i == RdE_i));
 ```
+
+Note that `ResultSRC0` is the LSB of `ResultSRC` which controls whether we are reading or writing to the register file. We need this to detect load and write instructions. The diagram below shows how the lw hazard is detected and how it is therefore used to trigger stalling of the fetch and decode stages:
+
+![](./personal_statement_assets/Pasted%20image%2020251209225057.png)
 
 The lw stall stalls the fetch and decode stages for one cycle, allowing the load to complete before the dependent instruction proceeds.
 
@@ -293,7 +307,7 @@ end
 
 ### Top Level Integration
 
-[System Verilog](../repo/rtl/top.sv)
+[System Verilog](../rtl/top.sv)
 
 Regarding the top.sv file implementation, I integrated all pipeline stages and registers into a pipelined processor top.sv file (took a lot of time as I had to go between diagrams and component sv files). As a result, I connected hazard unit signals to appropriate pipeline registers, implemented proper variable naming conventions across all module, and connected all datapath components to create a functional processor.
 
@@ -347,17 +361,29 @@ I led the integration of pipeline registers into `top.sv`, ensuring all stages w
 
 ## Cache Integration
 
-![alt text](<../images/Cache + Pipeline_Diagram (1).drawio.png>)
+The cache integrates with the pipelined processor at the memory stage, replacing direct memory access with cache lookups. The diagram below shows how the cache module sits between the execute/memory pipeline register and the data memory, handling cache hits and misses while coordinating with the hazard unit to stall the pipeline during cache operations:
+
+![alt text](<./personal_statement_assets/Cache + Pipeline_Diagram (1).drawio.png>)
 
 ### Cache Foundation
 
-[System Verilog](../repo/rtl/cache.sv)
+[System Verilog](../rtl/cache.sv)
 
 Regarding the cache implementaion, Josh and I designed the initial cache module structure, established the interface between cache and memory stage, and designed the state machine for cache operations. 
 
 #### Implementation
 
 On December 3rd, I worked with Josh on the cache foundation during a video call. We both contributed to the cache implementation:
+
+We started by sketching out our initial ideas during video calls, iterating on the cache structure and state machine design. These early sketches show our thought process as we worked through the cache organization and how it would interface with the memory stage:
+
+![](./personal_statement_assets/Pasted%20image%2020251209191802.png)
+
+![](./personal_statement_assets/Pasted%20image%2020251209191830.png)
+
+We iterated our initial design quite a few times and came up with this finalised diagram for our cache memory, which shows the complete cache structure including the 2 way set associative organization, tag comparison logic, and data paths:
+
+![](./personal_statement_assets/Pasted%20image%2020251209231525.png)
 
 1. **Initial Module Structure**: Josh and I worked together on defining the cache module interface, including:
    - Input/output ports for memory operations
@@ -372,6 +398,10 @@ On December 3rd, I worked with Josh on the cache foundation during a video call.
    - `WRITEBACK`: Writing dirty data back to memory
    - `FETCH`: Fetching data from memory on miss
    - `UPDATE`: Updating cache with fetched data
+
+   This is the structure we decided on implementing for the cache miss. The state machine diagram below shows the transitions: IDLE → WRITEBACK (if dirty) → FETCH → UPDATE → IDLE, or IDLE → FETCH (if clean) → UPDATE → IDLE. Each state corresponds to a distinct stall condition:
+
+   ![](./personal_statement_assets/Pasted%20image%2020251210183600.png)
 
    The state machine and hit/miss detection logic:
    ```systemverilog
@@ -419,11 +449,17 @@ On December 6th, I coauthored changes to all pipeline registers with Josh over a
 
 One of the problems we faced during our cache implementaiton was how we dealt with the signal `funct3`. After debugging our cache implementation with testbenches and assembly programs, it turned out that we needed to propagate funct3 through pipeline registers to support byte/half/word operations in the memory stage. This required extracting `funct3` from instruction in decode stage, passing through `pip_reg_e` and `pip_reg_m` eventually to memory stage, and routing to cache module for proper byte offset handling.
 
+An important detail was ensuring `funct3` is passed through the cache to memory for operations that miss. During cache fill operations, we always access memory as words (32 bits), but for direct cache access, we pass through the original `funct3` to enable byte operations. The diagrams below illustrate how `funct3` flows through the processor logic and to the data module through the cache module:
+
+![](./personal_statement_assets/Pasted%20image%2020251210183251.png)
+
+![](./personal_statement_assets/Pasted%20image%2020251210183416.png)
+
 ---
 
 ## Testing and Verification
 
-[Testbenches](../repo/tb/tests/component_tests/)
+[Testbenches](../tb/tests/component_tests/)
 
 I developed testbenches for all pipeline registers using the GTest framework and later updated them with Josh for cache stall handling. Each register was tested for normal operation, flushing, stalling, and correct signal propagation, including `funct3`. Additional testbenches covered the 3 way multiplexer, PC register, sign extension module, and the register file. For the register file, tests verified dual port reads, correct write behavior, x0 always reading zero, same cycle read/write handling, and multi register operations. These tests caught critical bugs early, such as improper writes to x0 and timing issues, and ensured reliable system integration. The test driven approach greatly reduced debugging time and confirmed the final pipelined processor with cache operated correctly.
 
