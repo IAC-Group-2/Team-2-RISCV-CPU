@@ -152,6 +152,14 @@ TEST_F(CpuTestbench, TestBranchInstructions)
     EXPECT_EQ(top_->a0, 100);
 }
 
+TEST_F(CpuTestbench, TestBranchPrediction)
+{
+    setupTest("14_branch_prediction");
+    initSimulation();
+    runSimulation(1000);
+    EXPECT_EQ(top_->a0, 20);
+}
+
 
 int main(int argc, char **argv)
 {
