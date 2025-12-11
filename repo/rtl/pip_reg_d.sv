@@ -9,11 +9,14 @@ module pip_reg_d #(
     input   logic [PC_WIDTH-1:0]            PCF_i, //Fetch
     output  logic [PC_WIDTH-1:0]            PCD_o, //Decode
     
-    input   logic[INSTRUCTION_WIDTH-1:0]    InstrF_i, //Fetch
-    output  logic[INSTRUCTION_WIDTH-1:0]    InstrD_o, //Decode
+    input   logic [INSTRUCTION_WIDTH-1:0]    InstrF_i, //Fetch
+    output  logic [INSTRUCTION_WIDTH-1:0]    InstrD_o, //Decode
 
     input   logic [PC_WIDTH-1:0]            PCPlus4F_i, //Fetch
-    output  logic [PC_WIDTH-1:0]            PCPlus4D_o  //Decode
+    output  logic [PC_WIDTH-1:0]            PCPlus4D_o,  //Decode
+
+    input   logic                           predictTakenF_i,
+    output   logic                           predictTakenD_o
 );
 
 always_ff @(posedge clk_i) begin
@@ -21,11 +24,13 @@ always_ff @(posedge clk_i) begin
         PCD_o       <= 'b0;
         InstrD_o    <= 'b0;
         PCPlus4D_o  <= 'b0;
+        predictTakenD_o <= 1'b0;
     end
     else if (en_i) begin
         PCD_o       <= PCF_i;
         InstrD_o    <= InstrF_i;
         PCPlus4D_o  <= PCPlus4F_i;
+        predictTakenD_o <= predictTakenF_i;
     end
     else begin//freeze
         PCD_o       <= PCD_o;

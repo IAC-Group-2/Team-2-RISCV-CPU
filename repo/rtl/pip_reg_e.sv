@@ -56,7 +56,10 @@ module pip_reg_e #( //Decode to execute stage
     output  logic [INSTRUCTION_WIDTH-1:0]   ImmExtE_o, //Execute
     
     input   logic [PC_WIDTH-1:0]            PCPlus4D_i, //Decode
-    output  logic [PC_WIDTH-1:0]            PCPlus4E_o //Execute
+    output  logic [PC_WIDTH-1:0]            PCPlus4E_o, //Execute
+
+    input   logic                           predictTakenD_i,
+    output  logic                           predictTakenE_o
     
 );
 
@@ -79,6 +82,7 @@ always_ff @(posedge clk_i) begin
         RdE_o           <= 'b0;
         ImmExtE_o       <= 'b0;
         PCPlus4E_o      <= 'b0;
+        predictTakenE_o <= 1'b0;
     end
     else if (en_i) begin  // Normal operation: pass data through
         RegWriteE_o     <= RegWriteD_i;
@@ -88,6 +92,7 @@ always_ff @(posedge clk_i) begin
         BranchE_o       <= BranchD_i;
         ALUControlE_o   <= ALUControlD_i;
         ALUSrcE_o       <= ALUSrcD_i;
+        ALUSrcAE_o      <= ALUSrcAD_i;
         funct3E_o       <= funct3D_i;
         RD1E_o          <= RD1D_i;
         RD2E_o          <= RD2D_i;
@@ -97,6 +102,7 @@ always_ff @(posedge clk_i) begin
         RdE_o           <= RdD_i;
         ImmExtE_o       <= ImmExtD_i;
         PCPlus4E_o      <= PCPlus4D_i;
+        predictTakenE_o <= predictTakenD_i;
     end
 
 end

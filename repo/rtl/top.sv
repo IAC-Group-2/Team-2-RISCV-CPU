@@ -6,7 +6,7 @@ module top #(
 ) (
     input   logic                   clk,
     input   logic                   rst,
-    input   logic                   trigger, // Removed to prevent warnings
+    input   logic                   trigger,
     output  logic [DATA_WIDTH-1:0]  a0
 );
 
@@ -120,10 +120,33 @@ module top #(
     logic [REGISTER_ADDRESS_WIDTH-1:0] RdM;
     logic [REGISTER_ADDRESS_WIDTH-1:0] RdW;
 
+    //branch prediction
+    logic PredictTakenF;
+    logic PredictTakenD;
+    logic PredictTakenE;
+    logic [PC_WIDTH-1:0] PredictTargetF;
+    logic MispredictE;
+
+    branch_predict branch_predict (
+        .clk_i(clk),
+        .rst_i(rst),
+        .PCF_i(PCF),
+        .predictTakenF_o(PredictTakenF),
+        .predictTargetF_o(PredictTargetF),
+        .PCE_i(PCE),
+        .PCTargetE_i(PCTargetE),
+        .BranchE_i(BranchE),
+        .TakenE_i(PCSrcE)
+    );
+
     mux_reg PC_Mux (
         .PCPlus4F_i(PCPlus4F),
+        .PredictTargetF_i(PredictTargetF),
+        .PredictTakenF_i(PredictTakenF),
+        .MispredictE_i(MispredictE),
         .PCTargetE_i(PCTargetE),
         .ALUResultE_i(ALUResultE),
+        .PCPlus4E_i(PCPlus4E),
         .PCSrcE_i(PCSrcE),
         .JalrE_i(JumpE && ALUSrcE),
         .PCNext_o(PCNext)
@@ -159,7 +182,9 @@ module top #(
         .PCPlus4F_i(PCPlus4F),
         .PCD_o(PCD),
         .InstrD_o(InstrD),
-        .PCPlus4D_o(PCPlus4D)
+        .PCPlus4D_o(PCPlus4D),
+        .predictTakenF_i(PredictTakenF),
+        .predictTakenD_o(PredictTakenD)
     );
 
     // Decode stage
@@ -214,7 +239,7 @@ module top #(
         .ResultSrcE0_i(ResultSrcE[0]),
         .RegWriteM_i(RegWriteM),
         .RegWriteW_i(RegWriteW),
-        .PCSrcE_i(PCSrcE),
+        .PCSrcE_i(MispredictE),
         .CacheStall_i(CacheStall),
         .ForwardAE_o(ForwardAE),
         .ForwardBE_o(ForwardBE),
@@ -264,8 +289,12 @@ module top #(
         .ImmExtD_i(ImmExtD),
         .ImmExtE_o(ImmExtE),
         .PCPlus4D_i(PCPlus4D),
-        .PCPlus4E_o(PCPlus4E)
+        .PCPlus4E_o(PCPlus4E),
+        .predictTakenD_i(PredictTakenD),
+        .predictTakenE_o(PredictTakenE)
     );
+
+    assign MispredictE = (PCSrcE != PredictTakenE);
 
     // Execute stage
     //3way mux so assumes ForwardAE != 11
@@ -299,8 +328,9 @@ module top #(
     branch_unit branch_unit (
         .funct3_i(funct3E),
         .Zero_i(ZeroE),
-        .ALUResult_i(ALUResultE),
-        .BranchTaken_o(Branch_Taken)
+        .BranchTaken_o(Branch_Taken),
+        .SrcA_i(SrcAE_final),
+        .SrcB_i(SrcBE)
     );
 
     // PCSrcE (branch or jump)
