@@ -521,6 +521,8 @@ To further increase the efficiency of our pipelined processor with two-way set-a
 
 The 2-bit saturating counter that acts as a state machine with four states: strongly not taken (`00`), weakly not taken (`01`), weakly taken (`10`), and strongly taken (`11`). This provides stability by requiring two consecutive mispredictions to change the prediction direction, this prevents loop exits from flipping the prediction immediately.
 
+![branch prediction fsm](./images/branch_predictor_fsm.png)
+
 To make a prediction during the fetch stage, the branch predictor uses the program counter (`PCF`) as an index into the two tables simultaneously: 
 
 - Pattern History Table (which stores the 2-bit state)
@@ -547,6 +549,51 @@ always_ff @(posedge clk_i) begin
         end
     end
 end
+```
+Testing and verification were done at both the component and system levels. Component level verification involved exhausting all state combinations to confirm that the logic correctly requires two consecutive mispredictions to change the prediction state. At the system level, we validated this by executing a feedback loop 19 times to saturate the state machine to 'Strongly Taken'. We then introduced a 'Not Taken' outcome on the 20th iteration to verify that the predictor output remained stable
+
+```cpp
+// component level testing
+// Expectation: Taking a branch once promotes Weakly Not Taken -> Weakly Taken
+TEST_F(TB_NAME, TrainTakenTest)
+{
+    // Reset
+    top->rst_i = 1; tick(); top->rst_i = 0;
+
+    // Verify initial state (0)
+    top->PCF_i = 0x20; top->eval();
+    EXPECT_EQ(top->predictTakenF_o, 0);
+
+    // Update: Branch Taken
+    // Transition: 01 (WNT) -> 10 (WT)
+    clock_update(0x20, true); 
+
+    // Verify New State (1)
+    top->PCF_i = 0x20; top->eval();
+    EXPECT_EQ(top->predictTakenF_o, 1);
+}
+```
+
+System level testing:
+```assembly
+.text
+.globl main
+
+main:
+    # Loop 20 times to saturate predictor.
+    
+    li a0, 0            # a0: Result count
+    li t0, 20           # t0: Loop Counter
+
+loop_start:
+    addi a0, a0, 1      # Increment result
+    addi t0, t0, -1     # Decrement counter
+    
+    # Branch taken 19 times, not taken 1 time.
+    bne t0, zero, loop_start 
+
+done:
+    j done #spin
 ```
 
 ## Testing and Verification
