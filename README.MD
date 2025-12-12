@@ -411,7 +411,85 @@ As mentioned in a [previous section](#branch-unit) within this report, to suppor
 
 ### Multiplication Instructions
 
-ANTHONY PLEASE DO
+As an extension beyond the RV32I base specification, we implemented support for the RISC-V **M extension multiplication instructions** as an optional enhancement. 
+
+The following multiplication instructions are supported:
+
+| Instruction | Description |
+|------------|-------------|
+| `MUL`      | Lower 32 bits of signed × signed multiplication |
+| `MULH`     | Upper 32 bits of signed × signed multiplication |
+| `MULHSU`   | Upper 32 bits of signed × unsigned multiplication |
+| `MULHU`    | Upper 32 bits of unsigned × unsigned multiplication |
+
+#### Instruction Decoding
+
+All multiplication instructions are encoded as R-type instructions using the standard opcode `0110011` and are uniquely identified by `funct7 = 7'b0000001`. The control unit was extended to recognise this pattern and generate a dedicated ALU control signal while reusing the existing R-type datapath.
+
+This approach avoided introducing a separate instruction format or execution unit and ensured compatibility with the existing pipeline control flow.
+
+#### ALU Implementation
+
+Multiplication logic is implemented directly inside the ALU rather than as a separate multiplier module. This simplifies integration and ensures that multiplication instructions behave like standard ALU operations within the execute stage.
+
+To preserve full precision, operands are first extended to 64 bits before multiplication. Both **sign extension** and **zero extension** are used depending on the instruction variant:
+
+```systemverilog
+// Sign-extended operands
+sign_ext_A = {{DATA_WIDTH{SrcA_i[DATA_WIDTH-1]}}, SrcA_i};
+sign_ext_B = {{DATA_WIDTH{SrcB_i[DATA_WIDTH-1]}}, SrcB_i};
+
+// Zero-extended operands
+zero_ext_A = {{DATA_WIDTH{1'b0}}, SrcA_i};
+zero_ext_B = {{DATA_WIDTH{1'b0}}, SrcB_i};
+```
+
+Three distinct 64-bit products are computed in parallel:
+```systemverilog
+signed_product          = sign_ext_A * sign_ext_B;
+unsigned_product        = zero_ext_A * zero_ext_B;
+signed_unsigned_product = sign_ext_A * zero_ext_B;
+```
+
+The ALU control signal then selects the appropriate result since
+- `MUL` &rarr; lower 32 bits of `unsigned_product`
+- `MULH` &rarr; upper 32 bits of `signed_product`
+- `MULHSU` &rarr; upper 32 bits of `signed_unsigned_product`
+- `MULHU` &rarr; upper 32 bits of `unsigned_product`
+
+```systemverilog
+4'b1010: ALUResult_o = unsigned_product[31:0];          // MUL
+4'b1011: ALUResult_o = signed_product[63:32];           // MULH
+4'b1100: ALUResult_o = signed_unsigned_product[63:32];  // MULHSU
+4'b1101: ALUResult_o = unsigned_product[63:32];         // MULHU
+```
+#### Pipeline Behaviour
+Multiplication instructions execute entirely within the execute stage and complete in a single cycle. No additional pipeline stages or timing changes were required. As a result:
+
+- Existing forwarding logic naturally resolves data hazards involving multiplication results
+
+- Load-use and cache stall handling remains unchanged
+
+- Writeback occurs through the standard writeback datapath
+
+This makes multiplication instructions fully interoperable with arithmetic, branch, and memory operations already supported by the pipeline.
+
+#### Verification
+We test the correctness of the instructions with the `13_mul.s` assembly file. The testing logic works similarly to previous assembly files. 
+We can then add to `verify.cpp` to test:
+```cpp
+TEST_F(CpuTestbench, TestMulstiplyInstructions)
+{
+    setupTest("13_mul");
+    initSimulation();
+    runSimulation(CYCLES); 
+
+    // Expected Checksum: 1,073,741,770
+    // (-50) + (1,073,741,823) + (-2) + (-1)
+    EXPECT_EQ(top_->a0, 1073741770);   
+}
+```
+Testing passed successfully
 
 ### Branch Prediction
 To further increase the efficiency of our pipelined processor with two-way set-associative cache memory, we implemented a dynamic branch predictor to reduce the wasted cycles caused by control hazards. This was achieved by designing a 2 bit saturating counter with a Pattern History Table (PHT) and a Branch Target Buffer (BTB). This logic was implemented as a separate component, `branch_predict.sv`, which operates in parallel with the fetch stage.
