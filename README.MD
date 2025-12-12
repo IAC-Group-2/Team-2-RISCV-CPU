@@ -48,7 +48,7 @@ chmod +x runtests.sh
 | Team Member       | GitHub        | CID      | Email           | Personal Statement |
 | ----------------- | ------------- | -------- | --------------- | ------------------ |
 | Joshua Hirschkorn | vortexisalpha | 02378306 | jh1234@ic.ac.uk |         [Joshua's Personal Statement](./repo/personal_statements/Joshua_Hirschkorn_Statement.md)           |
-| Yichan Kim           |   |  |  |         [Yichan's Personal Statement](./repo/personal_statements/Yichan_Kim_Statement.md)           |
+| Yichan Kim           | YichanKim  | 02327531 | yk1122@ic.ac.uk |         [Yichan's Personal Statement](./repo/personal_statements/Yichan_Kim_Statement.md)           |
 | Anthony Bartlett          |  an-thony350             |  02556059        |    ab4324@ic.ac.uk     |     [Anthony's Personal Statement](./repo/personal_statements/Anthony_Bartlett_Statement.md)  |
 | Carys Leung            | zenbean       | 02565398 | ccl224@ic.ac.uk |  [Carys' Personal Statement](./repo/personal_statements/Carys_Leung_Statement.md)        |
 
