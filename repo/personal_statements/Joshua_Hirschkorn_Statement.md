@@ -1820,4 +1820,4 @@ I'm grateful to have worked with such a dedicated team:
 
 - The entire team for their commitment to achieving all stretch goals
 
-This project demonstrated that effective communication and clear task allocation are just as important as technical skills in successful hardware design.
+This project demonstrated that effective communication and clear task allocation are just as important as technical skills in successful hardware design. Josh and I worked closely together throughout this project. We were both able to contribute immensely, and many of our tasks would not have been possible without each other’s support. Our collaboration was essential to completing the work.

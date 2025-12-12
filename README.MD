@@ -434,6 +434,8 @@ As mentioned in a [previous section](#branch-unit) within this report, to suppor
 
 ## Extension tasks
 
+[Extension surprise tag release](https://github.com/IAC-Group-2/Project_Brief/releases/tag/Extension-Surprise-Task)
+
 ### Multiplication Instructions
 
 As an extension beyond the RV32I base specification, we implemented support for the RISC-V **M extension multiplication instructions** as an optional enhancement. 
@@ -687,6 +689,9 @@ The PDF test was particularly valuable for validating the complete system includ
 
 ### F1 Test algorithm
 (copied from single_cycle readme)
+
+Please see [here](https://github.com/IAC-Group-2/Project_Brief/tree/single_cycle) for more info.
+
 As an additional application-level demonstration of the processor, an **F1-style start lights finite state machine (FSM)** was implemented entirely in **RISC-V assembly**. This program is designed to run on the single-cycle core and interface with **Vbuddy** for visual output.
 
 #### Behaviour Overview
