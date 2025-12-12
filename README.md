@@ -13,6 +13,7 @@ Our single cycle implementation covers the basic requirements to run all the ini
 |U-type|`lui`|
 
 ## Schematic
+![single cycle schematic](images/single_cycle_schematic.png)
 
 ## Contributions
 |Module|Josh|Yichan|Carys|Anthony|
@@ -39,6 +40,7 @@ Our single cycle implementation covers the basic requirements to run all the ini
 ## Testing
 ### Test Cases
 Single cycle passes all the tests provided:
+
 ![Testbench tests](images/single_cycle%20test%20pass.png)
 
 ### F1 light
