@@ -1,6 +1,7 @@
 # **RISC-V RV32I Processor Coursework**
 
-#### *Joshua Hirschkorn | CID: 02378306 | GitHub: vortexisalpha
+#### 
+Joshua Hirschkorn | CID: 02378306 | GitHub: vortexisalpha
 
 # Personal Statement
 
@@ -569,6 +570,12 @@ Here are a few sketches from our video calls:
 We iterated our initial design quite a few times and came up with this finalised diagram for our cache memory:
 
 ![](./personal_statement_assets/Pasted%20image%2020251209231525.png)
+
+
+The next step was to figure out how cache would be implemented with our current pipelined design and we came up with this addition to our draw.io document as a structure for how to integrate the cache:
+
+![](./personal_statement_assets/Cache%20+%20Pipeline_Diagram%20(1).drawio.png)
+
 
 #### Cache Structure
 

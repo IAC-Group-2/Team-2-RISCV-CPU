@@ -82,9 +82,11 @@ A more detailed readme of the single_cycle can be found here:
 
 ## Pipelined Processor Design
 
+[See pipelined tag release](https://github.com/IAC-Group-2/Project_Brief/tree/Pipeline)
+
 The transition from single cycle to pipelined architecture represented a substantial engineering challenge for the project, requiring careful coordination between team members to ensure all signals propagated correctly through the five pipeline stages: Fetch, Decode, Execute, Memory, and Writeback.
 
-![pipeline_diagram](./personal_statement_assets/pipeline_diagram.png)
+![pipeline_diagram](./repo/personal_statements/personal_statement_assets/pipeline_diagram.png)
 
 [See full image here](https://ibb.co/7tk689jL)
 
@@ -250,7 +252,7 @@ The cache implementation represented a significant extension beyond the core pro
 
 The cache stores 2 kilobytes of data across 256 sets, with each set containing two ways (cache lines). Each way stores a 32-bit data word alongside valid, dirty, and tag bits, with an LRU (Least Recently Used) bit per set indicating which way to replace on a cache miss:
 
-![](./personal_statement_assets/Pasted%20image%2020251209231525.png)
+![](./repo/personal_statements/personal_statement_assets/Pasted%20image%2020251209231525.png)
 
 ```
 
@@ -268,7 +270,7 @@ The 22-bit tag, 8-bit set index, and 2-bit byte offset partition the 32-bit addr
 
 Cache misses trigger a finite state machine that transitions through up to four states depending on whether the evicted cache line requires writeback.
 
-![](./personal_statement_assets/Pasted%20image%2020251210183600.png)
+![](./repo/personal_statements/personal_statement_assets/Pasted%20image%2020251210183600.png)
 
 
 The logic for this is below:  
