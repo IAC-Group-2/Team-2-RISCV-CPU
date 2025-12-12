@@ -180,85 +180,60 @@ FlushE_o = (lwStall || PCSrcE_i); // Insert bubble in execute stage
 
 ### Branch Unit
 
-CARYS AND ANTHONY EDIT THIS
-
-The branch unit, implemented by Carys and Anthony, evaluates branch conditions in the execute stage using the ALU zero flag and result values, determining whether conditional branches should be taken based on the `funct3` field encoding:
-
-  
+The branch unit, implemented by Carys and Anthony, evaluates branch conditions in the execute stage using the ALU `zero` flag and result values. It determines whether a conditional branches should be taken based on the `funct3` field encoding:
 
 ```systemverilog
-
 always_comb begin
-
-unique case(funct3_i)
-
-3'b000: BranchTaken_o = Zero_i; // BEQ
-
-3'b001: BranchTaken_o = !Zero_i; // BNE
-
-3'b100: BranchTaken_o = ($signed(SrcA_i) < $signed(SrcB_i)); // BLT
-
-3'b101: BranchTaken_o = ($signed(SrcA_i) >= $signed(SrcB_i)); // BGE
-
-3'b110: BranchTaken_o = (SrcA_i < SrcB_i); // BLTU
-
-3'b111: BranchTaken_o = (SrcA_i >= SrcB_i); // BGEU
-
-default: BranchTaken_o = 1'b0;
-
-endcase
-
+    unique case(funct3_i)
+        3'b000: BranchTaken_o = Zero_i; // BEQ
+        3'b001: BranchTaken_o = !Zero_i; // BNE
+        3'b100: BranchTaken_o = ($signed(SrcA_i) < $signed(SrcB_i)); // BLT
+        3'b101: BranchTaken_o = ($signed(SrcA_i) >= $signed(SrcB_i)); // BGE
+        3'b110: BranchTaken_o = (SrcA_i < SrcB_i); // BLTU
+        3'b111: BranchTaken_o = (SrcA_i >= SrcB_i); // BGEU
+        default: BranchTaken_o = 1'b0;
+    endcase
 end
-
 ```
 
-  
+When transitioning from single-cycle to a 5 stage pipeline processor, we introduced a dedicated branch unit. In a single cycle design, the branch logic was embedded into the control unit or relied on the ALU's `zero` flag. For the pipeline design, we needed a more robust and independent component to resolve control flow decisions explicitly.
 
-When a branch is taken, the hazard unit flushes the decode stage to discard the incorrectly fetched instruction, and the PC multiplexer routes the computed branch target address to the fetch stage.
+The branch unit component is placed in the execute stage. This implementation ensures that the register operands (read during the decode stage) are available for comparison. More importantly, this allows us to use the existing forwarding logic. Since the branch unit is in the same stage as the ALU, the forwarding logic can supply the most recent data to both components simultaneously, resolving data hazards on branch operands. 
+
+If branch is taken, the instructions that are in decode and fetch stages will be incorrect. To resolve this, the hazard unit must flush both stages which results in a 2 cycle branch misprediction penalty. Simultaneously the PC multiplexer routes the computed branch target address back to the fetch stage to restart execution at the correct location.
+
 
 ### Control Unit
 
-  CARYS AND ANTHONY EDIT THIS
-
-The control unit, significantly expanded by Carys and Anthony to support the complete RV32I instruction set, decodes the opcode, funct3, and funct7 fields to generate all control signals required by the datapath. The main decoder uses a case statement to identify instruction types and set base control signals accordingly:
-
-  
+The control unit, significantly expanded by Carys and Anthony to support the complete RISC-V32I instruction set, decodes the `opcode`, `funct3`, and `funct7` fields to generate all control signals required by the datapath. The main decoder uses a case statement to identify instruction types:
 
 ```systemverilog
-
 case (op_i)
-
-7'b0110011: begin // R-Type
-
-RegWrite_o = 1;
-
-ALUOp = 2'b10;
-
-end
-
-7'b0010011: begin // I-Type Arithmetic
-
-RegWrite_o = 1;
-
-ALUSrc_o = 1;
-
-ALUOp = 2'b10;
-
-if (funct3_i == 3'b001 || funct3_i == 3'b101)
-
-ImmSrc_o = 3'b101; // Shift immediate encoding
-
-end
-
-// ... additional instruction types
-
+    7'b0110011: begin // R-Type
+        RegWrite_o = 1;
+        ALUOp      = 2'b10;
+    end
+    7'b0010011: begin // I-Type Arithmetic
+        RegWrite_o = 1;
+        ALUSrc_o   = 1;
+        ALUOp      = 2'b10;
+        // ... (additional logic)
+    end
+    // ... additional instruction types
 endcase
-
 ```
 
-  
+A secondary decoder translates the `ALUOp` signal and `funct3`/`funct7` fields into the specific 4 bit ALU control signal. This handles the distinction between operations like ADD and SUB (which share the same `funct3` but differ in `funct7`) and manages the various I-Type immediate arithmetic operations.
 
-A secondary decoder translates the ALUOp signal and funct3/funct7 fields into the specific 4-bit ALU control signal, handling the distinction between ADD and SUB operations (which share the same funct3 but differ in funct7) and managing the various I-type immediate arithmetic operations.
+Adapting the Control Unit to accommodate the 5 stage pipeline required decoupling the decision making processes. In a single cycle processor, all control signals are generated and executed in a single clock cycle. Whereas in a pipelined design, signals generated in the Decode stage must propagate through pipeline registers to be used in later stages (Execute, Memory, and Writeback). By decoupling these decisions, the control unit avoids stalling for the ALU; instead, it flags the instruction and allows the pipeline logic to resolve the action once the necessary data becomes available.
+
+In a pipelined architecture, the control unit in the decode stage cannot know the outcome of a branch comparison, as that evaluation happens in the execute stage. To resolve this, we separated the logic. The decoder flags a branch instruction, and a separate logic block determines the final `PCSrc_o` (next PC Source) by combining this branch signal with the `Zero_i` flag which is fed back from the execute stage.
+
+Implementing `JALR` in a pipeline was challenging because its target address is calculated by the ALU (Register + Immediate), unlike `JAL` or branch instructions which use the PC adder. To resolve this, we introduced a `jalr` flag in the control unit. When high, this flag forces the PC multiplexer to ignore the PC adder and instead select the `ALUResult` as the next PC address, ensuring that the jump target is correctly sourced from the Execute stage.
+
+To support `LUI` within the pipeline without adding another stage or component, we modified the ALU control logic by assigning it a specific ALU opcode (2'b11). This allows us to use the existing execute stage datapath, the immediate value generated in the decode stage is passed to the ALU, which simply passes it through (SrcB) to be written back, removing the need for specialized hardware.
+
+Finally, we ensured that control signals remain valid throughout execution by propagating the control unit's outputs into the pipeline registers. This allows critical signals such as 'Write Enable' to travel with the instruction and trigger the correct action cycles later.
 
 ## Cache Implementation
 
@@ -390,47 +365,47 @@ The `funct3` signal must propagate through the pipeline to the memory stage so t
 
 ## Full Instruction Set
 
-CARYS AND ANTHONY PLEASE DO
+Anthony and Carys worked together to expand the base instruction set by taking roughly half of the remaining instructions each to implement. We integrated the full base instruction set into the pipeline design, which introduced the challenge of understanding the other pair's work to modify their designs accordingly. However, this proved beneficial as it allowed for a comprehensive peer review of the entire architecture.
 
-INSERT PHOTO OF DRAW.IO DIAGRAM WHEN YOU FINISH IT
-### ALU Design With Extended Instruction Set
+*INSERT PHOTO OF DRAW.IO DIAGRAM WHEN YOU FINISH IT
 
-The arithmetic logic unit serves as the computational core of the processor, accepting two 32-bit operands alongside a 4-bit control signal that determines which operation to perform. The initial implementation supported addition, subtraction, bitwise AND, bitwise OR, and set-less-than comparisons, which were sufficient for the reduced instruction set but required significant expansion later.
-
-
+The complete RV32I base instruction set brings the total supported operations to 37 distinct functions. Some key changes required to the pipeline to accommodate this included:
+### Expanded ALU and Decoding Logic
+While basic logic was already present, we expanded the ALU to support the remaining RV32I operations. This required updating the control unit's ALU decoder to use the `funct7` field, which is needed to uniquely identify instructions that share `funct3` fields, such as `SRL` and `SRA`.
 ```systemverilog
-
-always_comb begin
-
+// ALU.sv: added support for XOR, shifts and unsigned comparison
 case (ALUControl_i)
+    4'b0100: ALUResult_o = SrcA_i ^ SrcB_i;                 // XOR
+    4'b0111: ALUResult_o = $signed(SrcA_i) >>> SrcB_i[4:0]; // SRA
+    4'b1001: begin 
+        if (SrcA_i < SrcB_i) ALUResult_o = {{DATA_WIDTH-1{1'b0}}, 1'b1};
+        else ALUResult_o = {DATA_WIDTH{1'b0}};
+    end
 
-4'b0001: ALUResult_o = SrcA_i - SrcB_i; // SUB
-
-4'b0000: ALUResult_o = SrcA_i + SrcB_i; // ADD
-
-4'b0010: ALUResult_o = SrcA_i & SrcB_i; // AND
-
-4'b0011: ALUResult_o = SrcA_i | SrcB_i; // OR
-
-4'b0100: ALUResult_o = SrcA_i ^ SrcB_i; // XOR
-
-4'b0101: ALUResult_o = SrcA_i << SrcB_i[4:0]; // SLL
-
-4'b0110: ALUResult_o = SrcA_i >> SrcB_i[4:0]; // SRL
-
-4'b0111: ALUResult_o = $signed(SrcA_i) >>> SrcB_i[4:0]; // SRA
-
-// ... additional operations
-
-endcase
-
-end
-
+// control_unit.sv: SRL vs SRA using funct7
+3'b101: begin
+    if (funct7_i == 7'b0100000)
+        ALUControl_o = 4'b0111;   // SRA / SRAI
+    else
+        ALUControl_o = 4'b0110;   // SRL / SRLI
 ```
 
+### Datapath Routing (AUIPC and Jump)
+Although `JAL`/`JALR` was implemented in single cycle design, pipelining required us to propagate their return address `PC+4` through multiple pipeline stages. This was simply done by minor modifications to propagate `PCPlus4D` to `PCPlus4W` so that the correct return address is maintained until writeback stage.
 
-Carys and Anthony later extended this module to support the complete RV32I instruction set, adding shift operations (logical left, logical right, arithmetic right), XOR operations, and both signed and unsigned set-less-than comparisons, bringing the total supported operations to eleven distinct functions.
+`AUIPC` was not supported in our initial design, doing so required introducing a new multiplexer at ALU input `ALUSrcA`. This allows ALU to select the program counter as an operand or register output `Rs1`. The instruction is run in execute stage, we would need to propagate the the PC value through the pipeline registers from fetch till execute to ensure we have the correct address for addition
 
+```systemverilog
+// top.sv: new mux logic allowing PC to be selected at ALU source A
+assign SrcAE_final = ALUSrcAE ? [cite_start]PCE : SrcAE; [cite: 248]
+
+// pip_reg_e.sv: passing the PC value down to Execute stage
+always_ff @(posedge clk_i) begin
+    PCE_o <= PCD_i;
+```
+
+### Dedicated Branch Unit
+As mentioned in a [previous section](#branch-unit) within this report, to support all conditional branch instructions we replaced the zero flag from ALU with a dedicated branch unit in execute stage. 
 
 ## Extension tasks
 
