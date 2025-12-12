@@ -5,11 +5,12 @@ Our single cycle implementation covers the basic requirements to run all the ini
 |Instruction type|Instructions|
 |----------------|------------|
 |R-type|`add` `sub` `and` `or` `sll` `slt`|
-|I-type (Arithmetic|`addi` `andi` `ori` `slli` `slti`|
-|I-type (Load)|`lw` `lb`|
+|I-type (Arithmetic|`addi` `slli` `slti`|
+|I-type (Load)|`lw` `lbu`|
+|I-type (Jump)| `jalr`|
 |S-type|`sw` `sb`|
 |B-type|`beq` `bne`|
-|J-type|`jal` `jalr`|
+|J-type|`jal`|
 |U-type|`lui`|
 
 ## Schematic
