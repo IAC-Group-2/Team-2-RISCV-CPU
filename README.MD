@@ -367,7 +367,9 @@ The `funct3` signal must propagate through the pipeline to the memory stage so t
 
 Anthony and Carys worked together to expand the base instruction set by taking roughly half of the remaining instructions each to implement. We integrated the full base instruction set into the pipeline design, which introduced the challenge of understanding the other pair's work to modify their designs accordingly. However, this proved beneficial as it allowed for a comprehensive peer review of the entire architecture.
 
-*INSERT PHOTO OF DRAW.IO DIAGRAM WHEN YOU FINISH IT
+Schematic of full instruction set with pipeline, with the pipeline registers highlighted blue and key changes to components in orange:
+
+![schematic of full instruction set with pipeline](images/full_instruction_set_schema.png)
 
 The complete RV32I base instruction set brings the total supported operations to 37 distinct functions. Some key changes required to the pipeline to accommodate this included:
 ### Expanded ALU and Decoding Logic
